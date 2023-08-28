@@ -1,0 +1,113 @@
+use std::rc::Rc;
+
+use dioxus::prelude::*;
+
+use crate::api_client::ServiceOverview;
+
+pub struct ServicesOverviewState {
+    pub services: Option<Vec<ServiceOverview>>,
+    pub service_id: Option<String>,
+}
+
+impl ServicesOverviewState {
+    pub fn new() -> Self {
+        Self {
+            services: None,
+            service_id: None,
+        }
+    }
+}
+
+#[derive(Props, PartialEq, Eq)]
+pub struct ServicesOverviewProps {
+    pub service_id: Rc<String>,
+}
+
+pub fn services_overview<'s>(cx: Scope<'s, ServicesOverviewProps>) -> Element {
+    let services = use_state(cx, || ServicesOverviewState::new());
+
+    match services.service_id.as_ref() {
+        Some(service_id) => {
+            if service_id != cx.props.service_id.as_ref() {
+                load_services(&cx, &cx.props.service_id.as_ref(), &services);
+            }
+        }
+        None => {
+            load_services(&cx, &cx.props.service_id.as_ref(), &services);
+        }
+    }
+
+    let mut result = Vec::new();
+    match services.get().services.as_ref() {
+        Some(services) => {
+            result.push(rsx! {
+                table { class: "table table-striped", style: "text-align: left;",
+                    tr {
+                        th { "Data" }
+                        th { "Max" }
+                        th { "Min" }
+                        th { "Avg" }
+                        th { "Success" }
+                        th { "Error" }
+                        th { "Total" }
+                    }
+
+                    services.iter().map(|service|{
+                      let min = format!("{:?}", service.get_min_duration()) ;
+                      let max = format!("{:?}", service.get_max_duration()) ;
+                      let avg = format!("{:?}", service.get_avg_duration()) ;
+                       rsx! { tr { style:"border-top: 1px solid lightgray;",
+                            td{
+                                "{service.data}"
+                            }
+                            td{
+                                min
+                            }
+                            td{
+                                max
+                            }
+                            td{
+                                avg
+                            }
+                            td{
+                                "{service.success}"
+                            }
+                            td{
+                                "{service.error}"
+                            }
+                            td{
+                                "{service.total}"
+                            }
+                          }
+                        }
+                    })
+                }
+            });
+        }
+        None => {
+            result.push(rsx! { div { "Loading..." } });
+        }
+    }
+
+    render!(result.into_iter())
+}
+
+fn load_services<'s>(
+    cx: &Scope<'s, ServicesOverviewProps>,
+    service_id: &str,
+    state: &UseState<ServicesOverviewState>,
+) {
+    let state = state.to_owned();
+
+    let service_id = service_id.to_string();
+    cx.spawn(async move {
+        let response = crate::api_client::get_services_overview(service_id.clone())
+            .await
+            .unwrap();
+
+        state.set(ServicesOverviewState {
+            services: Some(response),
+            service_id: Some(service_id),
+        });
+    });
+}
