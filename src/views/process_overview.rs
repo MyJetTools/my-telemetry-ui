@@ -130,9 +130,9 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                         .set_selected_data(cx.props.service_id.clone(), cx.props.data.clone());
                 },
                 "Back"
-                b { "{cx.props.process_id}" }
-            }
 
+            }
+            b { "{cx.props.process_id}" }
             hr {}
         }
         content
