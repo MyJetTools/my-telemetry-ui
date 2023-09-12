@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, rc::Rc, sync::Arc};
 
 use dioxus::prelude::*;
 
-use crate::states::MainState;
+use crate::{api_client::ServiceModel, states::MainState};
 
 pub fn left_panel(cx: Scope) -> Element {
     let filter = use_state(cx, || "".to_string());
@@ -41,8 +41,16 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
 
     match left_panel.services.as_ref() {
         Some(services) => {
+            let max_duration = get_max_duration(services.values());
             for (service_id, service) in services.as_ref() {
                 let duration = format!("{:?}", service.get_avg_duration());
+
+                let duration_line = (service.avg as f64 / max_duration) * 100.0;
+
+                let duration_line = rsx! {
+                    div { style: "width:100%", div { style: "width:{duration_line}%; height: 2px; background-color:blue" } }
+                };
+
                 if let Some(selected) = left_panel.selected.as_ref() {
                     if selected.as_ref() == &service.id {
                         elements.push(rsx! {
@@ -52,6 +60,7 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
                                 style: "width: 100%; text-align: left;",
                                 "{service.id} "
                                 span { class: "badge text-bg-secondary", duration }
+                                duration_line
                             }
                         });
                         continue;
@@ -75,6 +84,7 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
                         },
                         "{service.id} "
                         span { class: "badge text-bg-secondary", duration }
+                        duration_line
                     }
                 });
             }
@@ -106,4 +116,16 @@ fn load_services<'s>(
 
         left_panel.services = Some(Arc::new(services));
     });
+}
+
+fn get_max_duration<'s>(services: impl Iterator<Item = &'s ServiceModel>) -> f64 {
+    let mut result = 0;
+
+    for srv in services {
+        if srv.avg > result {
+            result = srv.avg;
+        }
+    }
+
+    result as f64
 }

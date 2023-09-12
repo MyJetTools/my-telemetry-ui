@@ -9,7 +9,7 @@ pub struct ServicesContract {
 #[derive(serde::Deserialize, Clone)]
 pub struct ServiceModel {
     pub id: String,
-    avg: i64,
+    pub avg: i64,
 }
 
 impl ServiceModel {
