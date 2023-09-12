@@ -1,5 +1,3 @@
-use std::net::SocketAddr;
-
 use crate::app_ctx::APP_VERSION;
 
 pub const BOOTSTRAP_CSS: &[u8] = std::include_bytes!("../files/styled.css");
@@ -26,7 +24,7 @@ pub fn get_header_content() -> String {
     )
 }
 
-pub fn get_html(addr: SocketAddr) -> String {
+pub fn get_html(host: &str) -> String {
     let header_content = get_header_content();
     format!(
         r#"
@@ -37,6 +35,6 @@ pub fn get_html(addr: SocketAddr) -> String {
                 {glue}
             </html>
             "#,
-        glue = dioxus_liveview::interpreter_glue(&format!("ws://{addr}/ws"))
+        glue = dioxus_liveview::interpreter_glue(&format!("{host}/ws"))
     )
 }

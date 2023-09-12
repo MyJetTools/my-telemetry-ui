@@ -34,8 +34,4 @@ impl MainState {
     pub fn get_right_panel(&self) -> Option<&RightPanelState> {
         self.right_panel_state.as_ref()
     }
-
-    pub fn get_selected_service_id(&self) -> Rc<String> {
-        self.selected.as_ref().unwrap().clone()
-    }
 }
