@@ -4,3 +4,7 @@ mod right_panel;
 pub use right_panel::*;
 mod service_overview;
 pub use service_overview::*;
+mod service_data_overview;
+pub use service_data_overview::*;
+mod process_overview;
+pub use process_overview::*;

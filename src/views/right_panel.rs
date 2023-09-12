@@ -12,6 +12,12 @@ pub fn right_panel(cx: Scope) -> Element {
                     service_id: service_id.clone()
                 })
             }
+            RightPanelState::ShowServiceDataOverview(service_id, data) => {
+                render! { service_data_overview { service_id: service_id.clone(), data: data.clone() } }
+            }
+            RightPanelState::ShowProcess(service_id, data, process_id) => {
+                render! {process_overview { service_id: service_id.clone(), data: data.clone(), process_id: *process_id }}
+            }
         },
         None => {
             render!("Nothing selected")

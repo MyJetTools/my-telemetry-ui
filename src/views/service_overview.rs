@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use dioxus::prelude::*;
 
-use crate::api_client::ServiceOverview;
+use crate::{api_client::ServiceOverview, states::MainState};
 
 pub struct ServicesOverviewState {
     pub services: Option<Vec<ServiceOverview>>,
@@ -40,34 +40,50 @@ pub fn services_overview<'s>(cx: Scope<'s, ServicesOverviewProps>) -> Element {
     let mut result = Vec::new();
     match services.get().services.as_ref() {
         Some(services) => {
+            let max_duration = get_max(services);
+
             result.push(rsx! {
                 table { class: "table table-striped", style: "text-align: left;",
                     tr {
                         th { "Data" }
-                        th { "Max" }
                         th { "Min" }
                         th { "Avg" }
+                        th { "Max" }
                         th { "Success" }
                         th { "Error" }
                         th { "Total" }
+                        th {}
                     }
 
                     services.iter().map(|service|{
-                      let min = format!("{:?}", service.get_min_duration()) ;
+                      let min = format!("{:?}", service.get_min_duration());
                       let max = format!("{:?}", service.get_max_duration()) ;
                       let avg = format!("{:?}", service.get_avg_duration()) ;
-                       rsx! { tr { style:"border-top: 1px solid lightgray;",
+
+                      let bar_max = (service.max as f64 / max_duration) * 100.0;
+                      let bar_min = (service.min as f64 / max_duration) * 100.0;
+                      let bar_avg = (service.avg as f64 / max_duration) * 100.0;
+
+                      let service_data = Rc::new(service.data.clone());
+
+                       rsx! { tr { class:"table-line",
                             td{
                                 "{service.data}"
+                                div{ style: "width:100%; padding:0",
+                                    div{ style:"width: {bar_max}%; height: 2px; background-color:green"}
+                                    div{ style:"width: {bar_avg}%; height: 2px; background-color:orange"}
+                                    div{ style:"width: {bar_min}%; height: 2px; background-color:red"}
+
+                                }
                             }
                             td{
                                 min
                             }
                             td{
-                                max
+                                avg
                             }
                             td{
-                                avg
+                                max
                             }
                             td{
                                 "{service.success}"
@@ -77,6 +93,13 @@ pub fn services_overview<'s>(cx: Scope<'s, ServicesOverviewProps>) -> Element {
                             }
                             td{
                                 "{service.total}"
+                            }
+                            td{
+                                button{class:"btn btn-sm btn-primary", style:"padding: 2px 5px;", onclick: move |_|{
+                                    let right_panel_state =  use_shared_state::<MainState>(cx).unwrap();
+                                    right_panel_state.write().set_selected_data(cx.props.service_id.clone(), service_data.clone());
+
+                                }, "Expand"}
                             }
                           }
                         }
@@ -90,6 +113,18 @@ pub fn services_overview<'s>(cx: Scope<'s, ServicesOverviewProps>) -> Element {
     }
 
     render!(result.into_iter())
+}
+
+fn get_max(services: &[ServiceOverview]) -> f64 {
+    let mut result = 0;
+
+    for srv in services {
+        if srv.max > result {
+            result = srv.max;
+        }
+    }
+
+    result as f64
 }
 
 fn load_services<'s>(

@@ -76,3 +76,7 @@ body {
     height: calc(var(--total-height) - var(--search-input-height));
     overflow-y: auto;
 }
+
+.table-line {
+    border-top: 1px solid lightgray;
+}

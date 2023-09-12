@@ -9,9 +9,9 @@ pub struct ServicesOverviewContract {
 #[derive(serde::Deserialize, Clone)]
 pub struct ServiceOverview {
     pub data: String,
-    min: i64,
-    max: i64,
-    avg: i64,
+    pub min: i64,
+    pub max: i64,
+    pub avg: i64,
     pub success: usize,
     pub error: usize,
     pub total: usize,
