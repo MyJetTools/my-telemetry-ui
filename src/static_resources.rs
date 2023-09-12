@@ -1,5 +1,7 @@
 use std::net::SocketAddr;
 
+use crate::app_ctx::APP_VERSION;
+
 pub const BOOTSTRAP_CSS: &[u8] = std::include_bytes!("../files/styled.css");
 pub const APP_CSS: &[u8] = std::include_bytes!("../files/app.css");
 pub const APP_JS: &[u8] = std::include_bytes!("../files/app.js");
@@ -30,7 +32,7 @@ pub fn get_html(addr: SocketAddr) -> String {
         r#"
             <!DOCTYPE html>
             <html>
-                <head> <title>Telemetry</title> {header_content} </head>
+                <head> <title>{APP_VERSION}-MyTelemetry</title> {header_content} </head>
                 <body style:"--show-panel-offset:0"> <div id="main"></div> </body>
                 {glue}
             </html>

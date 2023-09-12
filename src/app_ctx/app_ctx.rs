@@ -8,6 +8,8 @@ pub struct AppCtxInner {
     settings_reader: Arc<SettingsReader>,
 }
 
+pub const APP_VERSION: &'static str = env!("CARGO_PKG_VERSION");
+//pub const APP_NAME: &'static str = env!("CARGO_PKG_NAME");
 pub struct AppCtx {
     inner: RwLock<Option<Arc<AppCtxInner>>>,
 }
