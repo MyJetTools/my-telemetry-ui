@@ -1,11 +1,11 @@
 use std::{collections::BTreeMap, rc::Rc, sync::Arc};
 
-use crate::api_client::ServiceModel;
+use crate::reader_grpc::ServiceGrpcModel;
 
 use super::RightPanelState;
 
 pub struct MainState {
-    pub services: Option<Arc<BTreeMap<Rc<String>, ServiceModel>>>,
+    pub services: Option<Arc<BTreeMap<Rc<String>, ServiceGrpcModel>>>,
     pub selected: Option<Rc<String>>,
     pub right_panel_state: Option<RightPanelState>,
 }

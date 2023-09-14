@@ -1,24 +1,10 @@
 use std::time::Duration;
 
-use flurl::IntoFlUrl;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
-#[derive(serde::Deserialize)]
-pub struct ProcessMetricsContract {
-    pub metrics: Vec<ProcessMetrics>,
-}
 
-#[derive(serde::Deserialize, Clone)]
-pub struct ProcessMetrics {
-    pub id: String,
-    pub data: String,
-    pub started: i64,
-    pub duration: i64,
-    pub success: Option<String>,
-    pub error: Option<String>,
-    pub ip: Option<String>,
-}
+use crate::reader_grpc::{GetByProcessIdRequest, MetricEventGrpcModel};
 
-impl ProcessMetrics {
+impl MetricEventGrpcModel {
     pub fn get_started(&self) -> DateTimeAsMicroseconds {
         DateTimeAsMicroseconds::new(self.started)
     }
@@ -28,24 +14,19 @@ impl ProcessMetrics {
     }
 }
 
-pub async fn get_by_process_id(process_id: i64) -> Result<Vec<ProcessMetrics>, String> {
+pub async fn get_by_process_id(process_id: i64) -> Result<Vec<MetricEventGrpcModel>, String> {
     let result = tokio::spawn(async move {
-        let settings_reader = crate::APP_CTX.get_settings_reader().await;
+        let grpc_client = crate::APP_CTX.get_telemetry_reader_grpc_client().await;
 
-        let url = settings_reader.get_url().await;
-
-        let response = url
-            .append_path_segment("ui")
-            .append_path_segment("GetByProcessId")
-            .append_query_param("processId", Some(process_id.to_string()))
-            .get()
+        let response = grpc_client
+            .get_by_process_id(GetByProcessIdRequest { process_id })
             .await;
 
         match response {
-            Ok(mut response) => {
-                let response: ProcessMetricsContract = response.get_json().await.unwrap();
-                Ok(response.metrics)
-            }
+            Ok(response) => match response {
+                Some(response) => Ok(response),
+                None => Ok(vec![]),
+            },
             Err(err) => Err(format!("{:?}", err)),
         }
     })

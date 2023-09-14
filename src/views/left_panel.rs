@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, rc::Rc, sync::Arc};
 
 use dioxus::prelude::*;
 
-use crate::{api_client::ServiceModel, states::MainState};
+use crate::{reader_grpc::ServiceGrpcModel, states::MainState};
 
 pub fn left_panel(cx: Scope) -> Element {
     let filter = use_state(cx, || "".to_string());
@@ -118,7 +118,7 @@ fn load_services<'s>(
     });
 }
 
-fn get_max_duration<'s>(services: impl Iterator<Item = &'s ServiceModel>) -> f64 {
+fn get_max_duration<'s>(services: impl Iterator<Item = &'s ServiceGrpcModel>) -> f64 {
     let mut result = 0;
 
     for srv in services {

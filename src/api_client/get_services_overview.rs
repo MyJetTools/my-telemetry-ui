@@ -1,23 +1,8 @@
 use std::time::Duration;
 
-use flurl::IntoFlUrl;
-#[derive(serde::Deserialize)]
-pub struct ServicesOverviewContract {
-    pub data: Vec<ServiceOverview>,
-}
+use crate::reader_grpc::{AppActionGrpcModel, GetByAppRequest};
 
-#[derive(serde::Deserialize, Clone)]
-pub struct ServiceOverview {
-    pub data: String,
-    pub min: i64,
-    pub max: i64,
-    pub avg: i64,
-    pub success: usize,
-    pub error: usize,
-    pub total: usize,
-}
-
-impl ServiceOverview {
+impl AppActionGrpcModel {
     pub fn get_avg_duration(&self) -> Duration {
         Duration::from_micros(self.avg as u64)
     }
@@ -31,24 +16,19 @@ impl ServiceOverview {
     }
 }
 
-pub async fn get_services_overview(service_id: String) -> Result<Vec<ServiceOverview>, String> {
+pub async fn get_services_overview(service_id: String) -> Result<Vec<AppActionGrpcModel>, String> {
     let result = tokio::spawn(async move {
-        let settings_reader = crate::APP_CTX.get_settings_reader().await;
+        let grpc_client = crate::APP_CTX.get_telemetry_reader_grpc_client().await;
 
-        let url = settings_reader.get_url().await;
-
-        let response = url
-            .append_path_segment("ui")
-            .append_path_segment("GetServiceOverview")
-            .append_query_param("id", Some(service_id))
-            .get()
+        let response = grpc_client
+            .get_app_actions(GetByAppRequest { app_id: service_id })
             .await;
 
         match response {
-            Ok(mut response) => {
-                let response: ServicesOverviewContract = response.get_json().await.unwrap();
-                Ok(response.data)
-            }
+            Ok(response) => match response {
+                Some(response) => Ok(response),
+                None => Ok(vec![]),
+            },
             Err(err) => Err(format!("{:?}", err)),
         }
     })

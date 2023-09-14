@@ -2,10 +2,10 @@ use std::rc::Rc;
 
 use dioxus::prelude::*;
 
-use crate::{api_client::ServiceOverview, states::MainState};
+use crate::{reader_grpc::AppActionGrpcModel, states::MainState};
 
 pub struct ServicesOverviewState {
-    pub services: Option<Vec<ServiceOverview>>,
+    pub services: Option<Vec<AppActionGrpcModel>>,
     pub service_id: Option<String>,
 }
 
@@ -115,7 +115,7 @@ pub fn services_overview<'s>(cx: Scope<'s, ServicesOverviewProps>) -> Element {
     render!(result.into_iter())
 }
 
-fn get_max(services: &[ServiceOverview]) -> f64 {
+fn get_max(services: &[AppActionGrpcModel]) -> f64 {
     let mut result = 0;
 
     for srv in services {

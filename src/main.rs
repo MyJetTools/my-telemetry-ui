@@ -7,6 +7,7 @@ use salvo::prelude::*;
 
 mod api_client;
 mod app_ctx;
+mod grpc_client;
 mod http_server;
 mod settings;
 mod states;
@@ -17,6 +18,10 @@ use settings::SettingsReader;
 use views::*;
 
 use crate::states::*;
+
+pub mod reader_grpc {
+    tonic::include_proto!("reader");
+}
 
 lazy_static::lazy_static! {
     pub static ref APP_CTX: AppCtx = {

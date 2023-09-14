@@ -1,24 +1,10 @@
 use std::time::Duration;
 
-use flurl::IntoFlUrl;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
-#[derive(serde::Deserialize)]
-pub struct ServiceDataContract {
-    pub metrics: Vec<ServiceDataMetrics>,
-}
 
-#[derive(serde::Deserialize, Clone)]
-pub struct ServiceDataMetrics {
-    pub id: i64,
-    pub started: i64,
-    pub duration: i64,
+use crate::reader_grpc::{AppDataGrpcModel, GetAppEventsByActionRequest};
 
-    pub success: Option<String>,
-    pub error: Option<String>,
-    pub ip: Option<String>,
-}
-
-impl ServiceDataMetrics {
+impl AppDataGrpcModel {
     pub fn get_started(&self) -> DateTimeAsMicroseconds {
         DateTimeAsMicroseconds::new(self.started)
     }
@@ -31,25 +17,22 @@ impl ServiceDataMetrics {
 pub async fn get_by_service_data(
     service_id: String,
     data: String,
-) -> Result<Vec<ServiceDataMetrics>, String> {
+) -> Result<Vec<AppDataGrpcModel>, String> {
     let result = tokio::spawn(async move {
-        let settings_reader = crate::APP_CTX.get_settings_reader().await;
+        let grpc_client = crate::APP_CTX.get_telemetry_reader_grpc_client().await;
 
-        let url = settings_reader.get_url().await;
-
-        let response = url
-            .append_path_segment("ui")
-            .append_path_segment("GetByServiceData")
-            .append_query_param("id", Some(service_id))
-            .append_query_param("data", Some(data))
-            .get()
+        let response = grpc_client
+            .get_app_events_by_action(GetAppEventsByActionRequest {
+                app_id: service_id,
+                data,
+            })
             .await;
 
         match response {
-            Ok(mut response) => {
-                let response: ServiceDataContract = response.get_json().await.unwrap();
-                Ok(response.metrics)
-            }
+            Ok(response) => match response {
+                Some(response) => Ok(response),
+                None => Ok(vec![]),
+            },
             Err(err) => Err(format!("{:?}", err)),
         }
     })

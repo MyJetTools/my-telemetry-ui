@@ -2,10 +2,10 @@ use std::{cmp::Ordering, rc::Rc};
 
 use dioxus::prelude::*;
 
-use crate::{api_client::ServiceDataMetrics, states::MainState};
+use crate::{reader_grpc::AppDataGrpcModel, states::MainState};
 
 pub struct ServiceDataOverviewState {
-    data: Option<Vec<ServiceDataMetrics>>,
+    data: Option<Vec<AppDataGrpcModel>>,
 }
 
 impl ServiceDataOverviewState {
@@ -34,18 +34,24 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
 
                 let (message, color) = match &data.success {
                     Some(success) => (success.as_str(), "green"),
-                    None => match &data.error {
+                    None => match &data.fail {
                         Some(error) => (error.as_str(), "red"),
                         None => ("", "black"),
                     },
                 };
 
-                let ip = match &data.ip {
-                    Some(ip) => ip.as_str(),
-                    None => "",
-                };
+                let tags = data.tags.iter().map(|tag| {
+                    let key = tag.key.as_str();
+                    let value = tag.value.as_str();
+                    rsx! {
+                        div { style: "padding:0; color:gray;",
+                            " {key}: "
+                            span { style: "color:black", value }
+                        }
+                    }
+                });
 
-                let process_id = data.id;
+                let process_id = data.process_id;
 
                 rsx! {
                     tr { class: "table-line",
@@ -55,7 +61,7 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
                         }
                         td { duration }
                         td { style: "color: {color}", message }
-                        td { ip }
+                        td { tags }
                         td {
                             button {
                                 class: "btn btn-sm btn-primary",
@@ -97,7 +103,7 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
                         th { "Started" }
                         th { "Duration" }
                         th { "Message" }
-                        th { "Ip" }
+                        th { "Tags" }
                         th {}
                     }
                     items
@@ -111,7 +117,7 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
     }
 }
 
-fn get_max(services: &[ServiceDataMetrics]) -> f64 {
+fn get_max(services: &[AppDataGrpcModel]) -> f64 {
     let mut result = 0;
 
     for srv in services {

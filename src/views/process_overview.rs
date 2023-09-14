@@ -2,7 +2,7 @@ use std::{cmp::Ordering, rc::Rc, time::Duration};
 
 use dioxus::prelude::*;
 
-use crate::{api_client::ProcessMetrics, states::MainState};
+use crate::{reader_grpc::MetricEventGrpcModel, states::MainState};
 #[derive(Props, PartialEq, Eq)]
 pub struct ProcessOverviewProps {
     pub service_id: Rc<String>,
@@ -11,7 +11,7 @@ pub struct ProcessOverviewProps {
 }
 
 struct ProcessOverviewState {
-    data: Option<Vec<ProcessMetrics>>,
+    data: Option<Vec<MetricEventGrpcModel>>,
 }
 
 pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
@@ -36,7 +36,7 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                         "white"
                     };
 
-                    let (message, color) = match &item.error {
+                    let (message, color) = match &item.fail {
                         Some(error) => (error.as_str(), "red"),
                         None => match &item.success {
                             Some(success) => (success.as_str(), "green"),
@@ -44,10 +44,16 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                         },
                     };
 
-                    let ip = match &item.ip {
-                        Some(ip) => ip.as_str(),
-                        None => "",
-                    };
+                    let tags = item.tags.iter().map(|tag| {
+                        let key = tag.key.as_str();
+                        let value = tag.value.as_str();
+                        rsx! {
+                            div { style: "padding:0; color:gray;",
+                                " {key}: "
+                                span { style: "color:black", value }
+                            }
+                        }
+                    });
 
                     let duration = format!("{:?}", item.get_duration());
 
@@ -70,20 +76,18 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                         tr { class: "table-line", style: "background-color:{bg_color}",
                             td { started }
                             td {
-                                div { style: "padding:0", "{item.id}" }
+                                div { style: "padding:0", "{item.name}" }
                                 div { style: "padding:0; font-size:10px", "{item.data}" }
                             }
                             td { duration }
                             td { style: "color:{color}", message }
-                            td { ip }
-                            td {
-                            }
+                            td { tags }
                         }
                     });
 
                     to_render.push(rsx! {
                         tr {
-                            td { colspan: 6,
+                            td { colspan: 5,
                                 div { style: "padding:0; width:{duration_line_left}%; font-size:8px;text-align: right;",
                                     delay
                                 }
@@ -100,12 +104,7 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                             td { "Name" }
                             td { "Duration" }
                             td { "Message" }
-                            td { "Ip" }
-                            td {
-                                "Delivery"
-                                br {}
-                                "Delay"
-                            }
+                            td { "Tags" }
                         }
                         to_render.into_iter()
                     }
@@ -130,7 +129,6 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                         .set_selected_data(cx.props.service_id.clone(), cx.props.data.clone());
                 },
                 "Back"
-
             }
             b { "{cx.props.process_id}" }
             hr {}
@@ -145,7 +143,7 @@ pub struct MinMax {
     max_duration: i64,
 }
 
-fn get_min_max(items: &[ProcessMetrics]) -> MinMax {
+fn get_min_max(items: &[MetricEventGrpcModel]) -> MinMax {
     let mut result = {
         let first = items.first().unwrap();
         MinMax {

@@ -1,40 +1,23 @@
 use std::time::Duration;
 
-use flurl::IntoFlUrl;
-#[derive(serde::Deserialize)]
-pub struct ServicesContract {
-    pub services: Vec<ServiceModel>,
-}
+use crate::reader_grpc::ServiceGrpcModel;
 
-#[derive(serde::Deserialize, Clone)]
-pub struct ServiceModel {
-    pub id: String,
-    pub avg: i64,
-}
-
-impl ServiceModel {
+impl ServiceGrpcModel {
     pub fn get_avg_duration(&self) -> Duration {
         Duration::from_micros(self.avg as u64)
     }
 }
 
-pub async fn get_list_of_services() -> Result<Vec<ServiceModel>, String> {
+pub async fn get_list_of_services() -> Result<Vec<ServiceGrpcModel>, String> {
     let result = tokio::spawn(async move {
-        let settings_reader = crate::APP_CTX.get_settings_reader().await;
+        let grpc_client = crate::APP_CTX.get_telemetry_reader_grpc_client().await;
 
-        let url = settings_reader.get_url().await;
-
-        let response = url
-            .append_path_segment("ui")
-            .append_path_segment("GetServices")
-            .get()
-            .await;
-
+        let response = grpc_client.get_apps(()).await;
         match response {
-            Ok(mut response) => {
-                let response: ServicesContract = response.get_json().await.unwrap();
-                Ok(response.services)
-            }
+            Ok(response) => match response {
+                Some(response) => Ok(response),
+                None => Ok(vec![]),
+            },
             Err(err) => Err(format!("{:?}", err)),
         }
     })
