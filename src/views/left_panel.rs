@@ -43,7 +43,11 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
         Some(services) => {
             let max_duration = get_max_duration(services.values());
             for (service_id, service) in services.as_ref() {
-                let duration = format!("{}/{:?}", service.amount, service.get_avg_duration());
+                let duration = format!(
+                    "{}/{:?}",
+                    format_amount(service.amount),
+                    service.get_avg_duration()
+                );
 
                 let duration_line = (service.avg as f64 / max_duration) * 100.0;
 
@@ -128,4 +132,20 @@ fn get_max_duration<'s>(services: impl Iterator<Item = &'s ServiceGrpcModel>) ->
     }
 
     result as f64
+}
+
+fn format_amount(value: i64) -> String {
+    if value < 1024 {
+        return format!("{}", value);
+    }
+
+    let value = value / 1024;
+
+    if value < 1024 {
+        return format!("{}K", value);
+    }
+
+    let value = value / 1024;
+
+    return format!("{}M", value);
 }
