@@ -8,6 +8,7 @@ package reader;
 message ServiceGrpcModel {
     string Id = 1;
     int64 Avg = 2;
+    int64 Amount = 3;
 }
 
 message GetByAppRequest{

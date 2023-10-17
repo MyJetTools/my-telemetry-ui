@@ -43,7 +43,7 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
         Some(services) => {
             let max_duration = get_max_duration(services.values());
             for (service_id, service) in services.as_ref() {
-                let duration = format!("{:?}", service.get_avg_duration());
+                let duration = format!("{}/{:?}", service.amount, service.get_avg_duration());
 
                 let duration_line = (service.avg as f64 / max_duration) * 100.0;
 
