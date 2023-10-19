@@ -46,7 +46,15 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
 
                     let tags = item.tags.iter().map(|tag| {
                         let key = tag.key.as_str();
-                        let value = tag.value.as_str();
+                        let value = if tag.value.len() > 25 {
+                            rsx! {
+                                span { button { class: "btn btn-sm btn-primary", "Show value" } }
+                            }
+                        } else {
+                            rsx! {
+                                span { tag.value.as_str() }
+                            }
+                        };
                         rsx! {
                             div { style: "padding:0; color:gray;",
                                 " {key}: "
