@@ -42,12 +42,17 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
 
                 let tags = data.tags.iter().map(|tag| {
                     let key = tag.key.as_str();
-                    let value = tag.value.as_str();
-                    rsx! {
-                        div { style: "padding:0; color:gray;",
-                            " {key}: "
-                            span { style: "color:black", value }
+                    let value = if tag.value.len() > 40 {
+                        rsx! {
+                            span { button { class: "btn btn-sm btn-primary", "Show value" } }
                         }
+                    } else {
+                        rsx! {
+                            span { style: "color:black", tag.value.as_str() }
+                        }
+                    };
+                    rsx! {
+                        div { style: "padding:0; color:gray;", " {key}: ", value }
                     }
                 });
 
