@@ -2,12 +2,13 @@ use std::{collections::BTreeMap, rc::Rc, sync::Arc};
 
 use crate::reader_grpc::ServiceGrpcModel;
 
-use super::RightPanelState;
+use super::{DialogState, RightPanelState};
 
 pub struct MainState {
     pub services: Option<Arc<BTreeMap<Rc<String>, ServiceGrpcModel>>>,
     pub selected: Option<Rc<String>>,
     pub right_panel_state: Option<RightPanelState>,
+    pub dialog: Option<DialogState>,
 }
 impl MainState {
     pub fn new() -> Self {
@@ -15,6 +16,7 @@ impl MainState {
             services: None,
             selected: None,
             right_panel_state: None,
+            dialog: None,
         }
     }
 
