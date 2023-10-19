@@ -74,7 +74,7 @@ pub fn services_overview<'s>(cx: Scope<'s, ServicesOverviewProps>) -> Element {
                         rsx! {
                             span {
                                 button {
-                                    class: "btn btn-sm btn-primary",
+                                    class: "btn btn-sm btn-light",
                                     onclick: move |_| {
                                         use_shared_state::<MainState>(cx)
                                             .unwrap()
@@ -84,7 +84,7 @@ pub fn services_overview<'s>(cx: Scope<'s, ServicesOverviewProps>) -> Element {
                                                 value: service_data_expand.clone(),
                                             });
                                     },
-                                    "{&service_data_expand[..32]}"
+                                    "{&service_data_expand[..64]}..."
                                 }
                             }
                         }
