@@ -2,7 +2,10 @@ use std::rc::Rc;
 
 use dioxus::prelude::*;
 
-use crate::{reader_grpc::AppActionGrpcModel, states::MainState};
+use crate::{
+    reader_grpc::AppActionGrpcModel,
+    states::{DialogState, MainState},
+};
 
 pub struct ServicesOverviewState {
     pub services: Option<Vec<AppActionGrpcModel>>,
@@ -65,10 +68,33 @@ pub fn services_overview<'s>(cx: Scope<'s, ServicesOverviewProps>) -> Element {
                       let bar_avg = (service.avg as f64 / max_duration) * 100.0;
 
                       let service_data = Rc::new(service.data.clone());
+                      let service_data_expand = service_data.clone();
+                      let service_data_to_show = if service_data.as_str().len()>64{
+                 
+                        rsx! {
+                            span {
+                                button {
+                                    class: "btn btn-sm btn-primary",
+                                    onclick: move |_| {
+                                        use_shared_state::<MainState>(cx)
+                                            .unwrap()
+                                            .write()
+                                            .show_dialog(DialogState::ShowKeyValue {
+                                                the_key: Rc::new("Expanding service data".to_string()),
+                                                value: service_data_expand.clone(),
+                                            });
+                                    },
+                                    "{&service_data_expand[..32]}"
+                                }
+                            }
+                        }
+                      }else{
+                        rsx!{ span{"{service_data_expand.as_str()}"}}
+                      };
 
                        rsx! { tr { class:"table-line",
                             td{
-                                "{service.data}"
+                                service_data_to_show,
                                 div{ style: "width:100%; padding:0",
                                     div{ style:"width: {bar_max}%; height: 2px; background-color:green"}
                                     div{ style:"width: {bar_avg}%; height: 2px; background-color:orange"}

@@ -17,7 +17,7 @@ pub fn render_dialog(cx: Scope) -> Element {
   
             let (dialog_content, header) = match dialog_state {
                 DialogState::ShowKeyValue { the_key, value } => {
-                    let result = rsx! { show_key_value { the_key: the_key.clone(), value: value.clone() } };
+                    let result = rsx! { show_key_value { value: value.clone() } };
                     (result, format!("Show Value for Key {}", the_key.as_str()))
                 }
             };
