@@ -98,12 +98,38 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                         "".to_string()
                     };
 
+                    let data = Rc::new(item.data.to_string());
+
+                    let data_to_expand = data.clone();
+
+                    let data_to_render = if item.data.len() > 64 {
+                        rsx! {
+                            span {
+                                button {
+                                    class: "btn btn-sm btn-light",
+                                    onclick: move |_| {
+                                        use_shared_state::<MainState>(cx)
+                                            .unwrap()
+                                            .write()
+                                            .show_dialog(DialogState::ShowKeyValue {
+                                                the_key: Rc::new(format!("Expanding data for {}", item.name)),
+                                                value: data_to_expand.clone(),
+                                            });
+                                    },
+                                    "{&data_to_expand[..64]}..."
+                                }
+                            }
+                        }
+                    } else {
+                        rsx! { span { "{item.data}" } }
+                    };
+
                     to_render.push(rsx! {
                         tr { class: "table-line", style: "background-color:{bg_color}",
                             td { started }
                             td {
                                 div { style: "padding:0", "{item.name}" }
-                                div { style: "padding:0; font-size:10px", "{item.data}" }
+                                div { style: "padding:0; font-size:10px", data_to_render }
                             }
                             td { duration }
                             td { style: "color:{color}", message }
