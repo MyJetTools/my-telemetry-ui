@@ -54,6 +54,7 @@ fn app(cx: Scope) -> Element {
         div { id: "layout",
             div { id: "left-panel", left_panel {} }
             div { id: "right-panel", right_panel {} }
+            dialog::render_dialog {}
         }
     }
 }

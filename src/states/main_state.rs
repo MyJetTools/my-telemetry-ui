@@ -36,4 +36,16 @@ impl MainState {
     pub fn get_right_panel(&self) -> Option<&RightPanelState> {
         self.right_panel_state.as_ref()
     }
+
+    pub fn get_dialog_state(&self) -> Option<&DialogState> {
+        self.dialog.as_ref()
+    }
+
+    pub fn show_dialog(&mut self, dialog_state: DialogState) {
+        self.dialog = Some(dialog_state);
+    }
+
+    pub fn hide_dialog(&mut self) {
+        self.dialog = None;
+    }
 }

@@ -2,7 +2,10 @@ use std::{cmp::Ordering, rc::Rc, time::Duration};
 
 use dioxus::prelude::*;
 
-use crate::{reader_grpc::MetricEventGrpcModel, states::MainState};
+use crate::{
+    reader_grpc::MetricEventGrpcModel,
+    states::{DialogState, MainState},
+};
 #[derive(Props, PartialEq, Eq)]
 pub struct ProcessOverviewProps {
     pub service_id: Rc<String>,
@@ -45,10 +48,28 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                     };
 
                     let tags = item.tags.iter().map(|tag| {
-                        let key = tag.key.as_str();
+                        let key = Rc::new(tag.key.to_string());
+                        let key_show_dialog = key.clone();
+                        let value = Rc::new(tag.value.to_string());
+                        let value_show_dialog = value.clone();
+
                         let value = if tag.value.len() > 40 {
                             rsx! {
-                                span { button { class: "btn btn-sm btn-primary", "Show value" } }
+                                span {
+                                    button {
+                                        class: "btn btn-sm btn-primary",
+                                        onclick: move |_| {
+                                            use_shared_state::<MainState>(cx)
+                                                .unwrap()
+                                                .write()
+                                                .show_dialog(DialogState::ShowKeyValue {
+                                                    the_key: key_show_dialog.clone(),
+                                                    value: value_show_dialog.clone(),
+                                                });
+                                        },
+                                        "Show value"
+                                    }
+                                }
                             }
                         } else {
                             rsx! {
@@ -56,7 +77,7 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                             }
                         };
                         rsx! {
-                            div { style: "padding:0; color:gray;", " {key}: ", value }
+                            div { style: "padding:0; color:gray;", " {key.as_str()}: ", value }
                         }
                     });
 

@@ -2,7 +2,10 @@ use std::{cmp::Ordering, rc::Rc};
 
 use dioxus::prelude::*;
 
-use crate::{reader_grpc::AppDataGrpcModel, states::MainState};
+use crate::{
+    reader_grpc::AppDataGrpcModel,
+    states::{DialogState, MainState},
+};
 
 pub struct ServiceDataOverviewState {
     data: Option<Vec<AppDataGrpcModel>>,
@@ -41,10 +44,28 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
                 };
 
                 let tags = data.tags.iter().map(|tag| {
-                    let key = tag.key.as_str();
+                    let key = Rc::new(tag.key.to_string());
+                    let key_show_dialog = key.clone();
+                    let value = Rc::new(tag.value.to_string());
+                    let value_show_dialog = value.clone();
+
                     let value = if tag.value.len() > 40 {
                         rsx! {
-                            span { button { class: "btn btn-sm btn-primary", "Show value" } }
+                            span {
+                                button {
+                                    class: "btn btn-sm btn-primary",
+                                    onclick: move |_| {
+                                        use_shared_state::<MainState>(cx)
+                                            .unwrap()
+                                            .write()
+                                            .show_dialog(DialogState::ShowKeyValue {
+                                                the_key: key_show_dialog.clone(),
+                                                value: value_show_dialog.clone(),
+                                            });
+                                    },
+                                    "Show value"
+                                }
+                            }
                         }
                     } else {
                         rsx! {
@@ -52,7 +73,7 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
                         }
                     };
                     rsx! {
-                        div { style: "padding:0; color:gray;", " {key}: ", value }
+                        div { style: "padding:0; color:gray;", " {key.as_str()}: ", value }
                     }
                 });
 
