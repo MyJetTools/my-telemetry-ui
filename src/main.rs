@@ -44,6 +44,9 @@ lazy_static::lazy_static! {
 fn main() {
     let config = LaunchBuilder::<FullstackRouterConfig<AppRoute>>::router();
 
+    #[cfg(feature = "ssr")]
+    let config = config.addr(std::net::SocketAddr::from(([0, 0, 0, 0], 8080)));
+
     //let config = LaunchBuilder::new(app);
     /*
        #[cfg(feature = "ssr")]
