@@ -10,9 +10,7 @@ impl ServiceGrpcModel {
 
 pub async fn get_list_of_services() -> Result<Vec<ServiceGrpcModel>, String> {
     let result = tokio::spawn(async move {
-        let grpc_client = crate::APP_CTX.get_telemetry_reader_grpc_client().await;
-
-        let response = grpc_client.get_apps(()).await;
+        let response = crate::APP_CTX.grpc_client.get_apps(()).await;
         match response {
             Ok(response) => match response {
                 Some(response) => Ok(response),

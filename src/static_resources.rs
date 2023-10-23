@@ -22,6 +22,7 @@ pub fn get_header_content() -> String {
     )
 }
 
+/*
 pub fn get_html(host: &str) -> String {
     let header_content = get_header_content();
     format!(
@@ -36,3 +37,4 @@ pub fn get_html(host: &str) -> String {
         glue = dioxus_liveview::interpreter_glue(&format!("{host}/ws"))
     )
 }
+*/

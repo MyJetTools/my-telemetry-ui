@@ -15,25 +15,16 @@ impl MetricEventGrpcModel {
 }
 
 pub async fn get_by_process_id(process_id: i64) -> Result<Vec<MetricEventGrpcModel>, String> {
-    let result = tokio::spawn(async move {
-        let grpc_client = crate::APP_CTX.get_telemetry_reader_grpc_client().await;
+    let response = crate::APP_CTX
+        .grpc_client
+        .get_by_process_id(GetByProcessIdRequest { process_id })
+        .await;
 
-        let response = grpc_client
-            .get_by_process_id(GetByProcessIdRequest { process_id })
-            .await;
-
-        match response {
-            Ok(response) => match response {
-                Some(response) => Ok(response),
-                None => Ok(vec![]),
-            },
-            Err(err) => Err(format!("{:?}", err)),
-        }
-    })
-    .await;
-
-    match result {
-        Ok(result) => result,
+    match response {
+        Ok(response) => match response {
+            Some(response) => Ok(response),
+            None => Ok(vec![]),
+        },
         Err(err) => Err(format!("{:?}", err)),
     }
 }

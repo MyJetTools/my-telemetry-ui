@@ -1,12 +1,11 @@
 use std::{collections::BTreeMap, rc::Rc, sync::Arc};
 
-use crate::reader_grpc::ServiceGrpcModel;
+use crate::views::ServiceOverviewApiModel;
 
 use super::{DialogState, RightPanelState};
 
 pub struct MainState {
-    pub services: Option<Arc<BTreeMap<Rc<String>, ServiceGrpcModel>>>,
-    pub selected: Option<Rc<String>>,
+    pub services: Option<Arc<BTreeMap<Rc<String>, ServiceOverviewApiModel>>>,
     pub right_panel_state: Option<RightPanelState>,
     pub dialog: Option<DialogState>,
 }
@@ -14,15 +13,57 @@ impl MainState {
     pub fn new() -> Self {
         Self {
             services: None,
-            selected: None,
             right_panel_state: None,
             dialog: None,
         }
     }
 
+    pub fn new_with_selected_service(service_name: String) -> Self {
+        Self {
+            services: None,
+            right_panel_state: Some(RightPanelState::ShowServiceOverview(Rc::new(service_name))),
+            dialog: None,
+        }
+    }
+
+    pub fn new_with_selected_action(service_name: String, action: String) -> Self {
+        Self {
+            services: None,
+            right_panel_state: Some(RightPanelState::ShowServiceDataOverview(
+                Rc::new(service_name),
+                Rc::new(action),
+            )),
+            dialog: None,
+        }
+    }
+
+    pub fn new_with_selected_process(
+        service_name: String,
+        action: String,
+        process_id: i64,
+    ) -> Self {
+        Self {
+            services: None,
+            right_panel_state: Some(RightPanelState::ShowProcess(
+                Rc::new(service_name),
+                Rc::new(action),
+                process_id,
+            )),
+            dialog: None,
+        }
+    }
+
     pub fn set_selected(&mut self, selected: Rc<String>) {
-        self.right_panel_state = Some(RightPanelState::ShowServiceOverview(selected.clone()));
-        self.selected = selected.into();
+        println!("Selected: {}", selected);
+        self.right_panel_state = Some(RightPanelState::ShowServiceOverview(selected));
+    }
+
+    pub fn get_selected(&self) -> Option<Rc<String>> {
+        match self.right_panel_state.as_ref()? {
+            RightPanelState::ShowServiceOverview(id) => Some(id.clone()),
+            RightPanelState::ShowServiceDataOverview(id, _) => Some(id.clone()),
+            RightPanelState::ShowProcess(id, _, _) => Some(id.clone()),
+        }
     }
 
     pub fn set_selected_data(&mut self, service_id: Rc<String>, data: Rc<String>) {
@@ -34,6 +75,18 @@ impl MainState {
     }
 
     pub fn get_right_panel(&self) -> Option<&RightPanelState> {
+        match self.right_panel_state.as_ref() {
+            Some(state) => match state {
+                RightPanelState::ShowServiceOverview(_) => println!("Show service overview"),
+                RightPanelState::ShowServiceDataOverview(_, _) => {
+                    println!("Show service data overview")
+                }
+                RightPanelState::ShowProcess(_, _, _) => println!("Show process"),
+            },
+            None => {
+                println!("Right panel is empty")
+            }
+        }
         self.right_panel_state.as_ref()
     }
 

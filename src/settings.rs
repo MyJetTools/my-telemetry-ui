@@ -1,18 +1,15 @@
-use serde::*;
-
 use crate::grpc_client::TelemetryReaderGrpcClient;
 
-#[derive(my_settings_reader::SettingsModel, Serialize, Deserialize, Debug, Clone)]
-pub struct SettingsModel {
-    pub url: String,
-}
+pub struct SettingsModel;
 
 #[async_trait::async_trait]
-impl my_grpc_extensions::GrpcClientSettings for SettingsReader {
+impl my_grpc_extensions::GrpcClientSettings for SettingsModel {
     async fn get_grpc_url(&self, name: &'static str) -> String {
         if name == TelemetryReaderGrpcClient::get_service_name() {
-            let read_access = self.settings.read().await;
-            return read_access.url.clone();
+            match std::env::var("TELEMETRY_READER_GRPC_URL") {
+                Ok(url) => url,
+                Err(_) => panic!("TELEMETRY_READER_GRPC_URL is not set"),
+            }
         }
 
         panic!("Unknown grpc service name: {}", name)

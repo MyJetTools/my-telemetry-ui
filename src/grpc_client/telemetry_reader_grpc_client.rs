@@ -1,4 +1,4 @@
-#[my_grpc_client_macros::generate_grpc_client(
+#[my_grpc_extensions::client::generate_grpc_client(
     proto_file: "./proto/TelemetryReader.proto",
     crate_ns: "crate::reader_grpc",
     retries: 3,

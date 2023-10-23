@@ -7,10 +7,8 @@ pub fn right_panel(cx: Scope) -> Element {
 
     match main_state.read().get_right_panel() {
         Some(state) => match state {
-            RightPanelState::ShowServiceOverview(service_id) => {
-                render!(services_overview {
-                    service_id: service_id.clone()
-                })
+            RightPanelState::ShowServiceOverview(_) => {
+                render!(services_overview {})
             }
             RightPanelState::ShowServiceDataOverview(service_id, data) => {
                 render! { service_data_overview { service_id: service_id.clone(), data: data.clone() } }

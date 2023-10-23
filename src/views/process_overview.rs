@@ -1,11 +1,11 @@
-use std::{cmp::Ordering, rc::Rc, time::Duration};
+use std::{rc::Rc, time::Duration};
 
 use dioxus::prelude::*;
+use dioxus_fullstack::prelude::*;
 
-use crate::{
-    reader_grpc::MetricEventGrpcModel,
-    states::{DialogState, MainState},
-};
+use crate::states::{DialogState, MainState};
+
+use super::TagApiModel;
 #[derive(Props, PartialEq, Eq)]
 pub struct ProcessOverviewProps {
     pub service_id: Rc<String>,
@@ -14,7 +14,7 @@ pub struct ProcessOverviewProps {
 }
 
 struct ProcessOverviewState {
-    data: Option<Vec<MetricEventGrpcModel>>,
+    data: Option<Vec<MetricEventApiModel>>,
 }
 
 pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
@@ -23,7 +23,6 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
     let content = match widget_state.get().data.as_ref() {
         Some(items) => {
             if items.len() == 0 {
-                load_data(&cx, widget_state);
                 rsx! { h1 { "No Data" } }
             } else {
                 let mut to_render = Vec::new();
@@ -31,7 +30,7 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                 let min_max = get_min_max(items);
 
                 for item in items {
-                    let started = item.get_started().to_rfc3339();
+                    let started = item.get_started();
 
                     let bg_color = if &item.data == cx.props.data.as_str() {
                         "lightgray"
@@ -164,24 +163,20 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
             }
         }
         None => {
-            load_data(&cx, widget_state);
+            let widget_state = widget_state.to_owned();
+            let process_id = cx.props.process_id;
+            cx.spawn(async move {
+                let response = load_metric_events(process_id).await.unwrap();
+                widget_state.set(ProcessOverviewState {
+                    data: Some(response),
+                })
+            });
             rsx! { h1 { "Loading..." } }
         }
     };
 
     render! {
         div { style: "text-align: left;",
-            button {
-                class: "btn btn-sm btn-primary",
-                style: "padding: 2px 5px;",
-                onclick: move |_| {
-                    let main_state = use_shared_state::<MainState>(cx).unwrap();
-                    main_state
-                        .write()
-                        .set_selected_data(cx.props.service_id.clone(), cx.props.data.clone());
-                },
-                "Back"
-            }
             b { "{cx.props.process_id}" }
             hr {}
         }
@@ -195,7 +190,7 @@ pub struct MinMax {
     max_duration: i64,
 }
 
-fn get_min_max(items: &[MetricEventGrpcModel]) -> MinMax {
+fn get_min_max(items: &[MetricEventApiModel]) -> MinMax {
     let mut result = {
         let first = items.first().unwrap();
         MinMax {
@@ -222,7 +217,66 @@ fn get_min_max(items: &[MetricEventGrpcModel]) -> MinMax {
     result
 }
 
-fn load_data<'s>(cx: &Scope<'s, ProcessOverviewProps>, state: &UseState<ProcessOverviewState>) {
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct MetricEventApiModel {
+    pub started: i64,
+    pub duration: i64,
+    pub name: String,
+    pub data: String,
+    pub tags: Vec<TagApiModel>,
+    pub success: Option<String>,
+    pub fail: Option<String>,
+}
+
+impl MetricEventApiModel {
+    pub fn get_started(&self) -> String {
+        crate::utils::unix_microseconds_to_string(self.started)
+    }
+
+    pub fn get_duration(&self) -> Duration {
+        Duration::from_micros(self.duration as u64)
+    }
+}
+
+#[server]
+async fn load_metric_events(process_id: i64) -> Result<Vec<MetricEventApiModel>, ServerFnError> {
+    let mut response = crate::api_client::get_by_process_id(process_id)
+        .await
+        .unwrap();
+
+    response.sort_by(|i1, i2| {
+        if i1.started > i2.started {
+            std::cmp::Ordering::Greater
+        } else if i1.started < i2.started {
+            std::cmp::Ordering::Less
+        } else {
+            std::cmp::Ordering::Equal
+        }
+    });
+
+    let result: Vec<_> = response
+        .into_iter()
+        .map(|itm| MetricEventApiModel {
+            started: itm.started,
+            duration: itm.duration,
+            name: itm.name,
+            data: itm.data,
+            tags: itm
+                .tags
+                .into_iter()
+                .map(|tag| TagApiModel {
+                    key: tag.key,
+                    value: tag.value,
+                })
+                .collect(),
+            success: itm.success,
+            fail: itm.fail,
+        })
+        .collect();
+
+    Ok(result)
+
+    /*
     let state = state.to_owned();
 
     let process_id = cx.props.process_id;
@@ -246,4 +300,5 @@ fn load_data<'s>(cx: &Scope<'s, ProcessOverviewProps>, state: &UseState<ProcessO
             data: Some(response),
         });
     });
+     */
 }

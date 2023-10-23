@@ -1,8 +1,10 @@
-use std::{collections::BTreeMap, rc::Rc, sync::Arc};
+use std::{collections::BTreeMap, rc::Rc, sync::Arc, time::Duration};
 
 use dioxus::prelude::*;
+use dioxus_fullstack::prelude::*;
+use dioxus_router::prelude::*;
 
-use crate::{reader_grpc::ServiceGrpcModel, states::MainState};
+use crate::{states::MainState, AppRoute};
 
 pub fn left_panel(cx: Scope) -> Element {
     let filter = use_state(cx, || "".to_string());
@@ -32,17 +34,29 @@ pub struct LeftPanelContentProps {
 fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
     let left_panel_state = use_shared_state::<MainState>(cx).unwrap();
 
-    let left_panel = left_panel_state.read();
+    let left_panel_state_owned = left_panel_state.to_owned();
 
-    let left_panel_owned = left_panel_state.to_owned();
-    let left_panel_owned = Rc::new(left_panel_owned);
+    let _future = use_future(cx, (), |_| async move {
+        let response = load_service_overview().await.unwrap();
+
+        let mut services = BTreeMap::new();
+
+        for service in response {
+            services.insert(Rc::new(service.id.clone()), service);
+        }
+
+        let mut left_panel = left_panel_state_owned.write();
+        left_panel.services = Some(Arc::new(services));
+    });
+
+    let left_panel = left_panel_state.read();
 
     let mut elements = Vec::new();
 
     match left_panel.services.as_ref() {
         Some(services) => {
             let max_duration = get_max_duration(services.values());
-            for (service_id, service) in services.as_ref() {
+            for (_, service) in services.as_ref() {
                 let duration = format!(
                     "{}/{:?}",
                     format_amount(service.amount),
@@ -55,8 +69,8 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
                     div { style: "width:100%", div { style: "width:{duration_line}%; height: 2px; background-color:blue" } }
                 };
 
-                if let Some(selected) = left_panel.selected.as_ref() {
-                    if selected.as_ref() == &service.id {
+                if let Some(selected) = left_panel.get_selected() {
+                    if selected.as_str() == service.id.as_str() {
                         elements.push(rsx! {
                             button {
                                 r#type: "button",
@@ -75,18 +89,25 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
                     continue;
                 }
 
-                let left_panel_owned = left_panel_owned.clone();
+                let service_id_cloned = Rc::new(service.id.clone());
 
-                let service_id = service_id.clone();
                 elements.push(rsx! {
                     button {
                         r#type: "button",
                         class: "btn btn-light btn-sm",
                         style: "width: 100%; text-align: left;",
-                        onclick: move |_| {
-                            left_panel_owned.write().set_selected(service_id.clone());
-                        },
-                        "{service.id} "
+
+                        Link {
+                            onclick: move |_| {
+                                println!("Clicked on {}", service_id_cloned);
+                                let left_panel_state = use_shared_state::<MainState>(cx).unwrap();
+                                left_panel_state.write().set_selected(service_id_cloned.clone());
+                            },
+                            to: AppRoute::Actions {
+    service: service.id.clone(),
+},
+                            "{service.id} "
+                        }
                         span { class: "badge text-bg-secondary", duration }
                         duration_line
                     }
@@ -95,17 +116,41 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
         }
         None => {
             elements.push(rsx! { h4 { "Loading..." } });
-            load_services(&cx, &left_panel_state);
         }
     }
 
     render!(elements.into_iter())
 }
 
-fn load_services<'s>(
-    cx: &Scope<'s, LeftPanelContentProps>,
-    left_panel_state: &UseSharedState<MainState>,
-) {
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct ServiceOverviewApiModel {
+    pub id: String,
+    pub amount: i64,
+    pub avg: i64,
+}
+
+impl ServiceOverviewApiModel {
+    pub fn get_avg_duration(&self) -> Duration {
+        Duration::from_millis(self.avg as u64)
+    }
+}
+
+#[server]
+async fn load_service_overview() -> Result<Vec<ServiceOverviewApiModel>, ServerFnError> {
+    let response = crate::api_client::get_list_of_services().await.unwrap();
+
+    let result = response
+        .into_iter()
+        .map(|service| ServiceOverviewApiModel {
+            id: service.id,
+            amount: service.amount,
+            avg: service.avg,
+        })
+        .collect();
+
+    Ok(result)
+
+    /*
     let left_panel_state = left_panel_state.to_owned();
     cx.spawn(async move {
         let response = crate::api_client::get_list_of_services().await.unwrap();
@@ -120,9 +165,10 @@ fn load_services<'s>(
 
         left_panel.services = Some(Arc::new(services));
     });
+     */
 }
 
-fn get_max_duration<'s>(services: impl Iterator<Item = &'s ServiceGrpcModel>) -> f64 {
+fn get_max_duration<'s>(services: impl Iterator<Item = &'s ServiceOverviewApiModel>) -> f64 {
     let mut result = 0;
 
     for srv in services {

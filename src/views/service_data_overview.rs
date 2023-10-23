@@ -1,14 +1,16 @@
-use std::{cmp::Ordering, rc::Rc};
-
-use dioxus::prelude::*;
+use std::{rc::Rc, time::Duration};
 
 use crate::{
-    reader_grpc::AppDataGrpcModel,
+    router::AppRoute,
     states::{DialogState, MainState},
+    utils::to_base_64,
 };
+use dioxus::prelude::*;
+use dioxus_fullstack::prelude::*;
+use dioxus_router::prelude::Link;
 
 pub struct ServiceDataOverviewState {
-    data: Option<Vec<AppDataGrpcModel>>,
+    data: Option<Vec<ServiceDataApiModel>>,
 }
 
 impl ServiceDataOverviewState {
@@ -30,7 +32,7 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
         Some(data) => {
             let max_duration = get_max(data);
             let items = data.iter().map(|data| {
-                let started = data.get_started().to_rfc3339();
+                let started = data.get_started();
                 let duration = format!("{:?}", data.get_duration());
 
                 let bar_duration = (data.duration as f64 / max_duration) * 100.0;
@@ -78,6 +80,8 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
                 });
 
                 let process_id = data.process_id;
+                let service_id_2 = cx.props.service_id.to_string();
+                let action_base_64 = to_base_64( cx.props.data.as_str());
 
                 rsx! {
                     tr { class: "table-line",
@@ -92,17 +96,24 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
                             button {
                                 class: "btn btn-sm btn-primary",
                                 style: "padding: 2px 5px;",
-                                onclick: move |_| {
-                                    let right_panel_state = use_shared_state::<MainState>(cx).unwrap();
-                                    right_panel_state
-                                        .write()
-                                        .set_show_process(
-                                            cx.props.service_id.clone(),
-                                            cx.props.data.clone(),
-                                            process_id,
-                                        );
-                                },
-                                "Show"
+                                Link {
+                                    onclick: move |_| {
+                                        let right_panel_state = use_shared_state::<MainState>(cx).unwrap();
+                                        right_panel_state
+                                            .write()
+                                            .set_show_process(
+                                                cx.props.service_id.clone(),
+                                                cx.props.data.clone(),
+                                                process_id,
+                                            );
+                                    },
+                                    to: AppRoute::Process {
+    service: service_id_2.to_string(),
+    action: action_base_64,
+    id: process_id,
+},
+                                    "Show"
+                                }
                             }
                         }
                     }
@@ -111,16 +122,6 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
 
             render! {
                 div { style: "text-align: left;",
-                    button {
-                        class: "btn btn-sm btn-primary",
-                        style: "padding: 2px 5px;",
-                        onclick: move |_| {
-                            let main_state = use_shared_state::<MainState>(cx).unwrap();
-                            main_state.write().set_selected(cx.props.service_id.clone());
-                        },
-                        "Back"
-                    }
-
                     b { "{cx.props.data}" }
                     hr {}
                 }
@@ -137,13 +138,19 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
             }
         }
         None => {
-            load_services_data(&cx, widget_state);
+            let service_id = cx.props.service_id.as_ref().to_string();
+            let service_data = cx.props.data.as_ref().to_string();
+            let widget_state = widget_state.to_owned();
+            cx.spawn(async move {
+                let data = load_services_data(service_id, service_data).await.unwrap();
+                widget_state.set(ServiceDataOverviewState { data: Some(data) })
+            });
             render! { h1 { "Loading" } }
         }
     }
 }
 
-fn get_max(services: &[AppDataGrpcModel]) -> f64 {
+fn get_max(services: &[ServiceDataApiModel]) -> f64 {
     let mut result = 0;
 
     for srv in services {
@@ -155,10 +162,73 @@ fn get_max(services: &[AppDataGrpcModel]) -> f64 {
     result as f64
 }
 
-fn load_services_data<'s>(
-    cx: &Scope<'s, ServiceDataOverviewProps>,
-    state: &UseState<ServiceDataOverviewState>,
-) {
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct ServiceDataApiModel {
+    pub process_id: i64,
+    pub started: i64,
+    pub duration: u64,
+    pub success: Option<String>,
+    pub fail: Option<String>,
+    pub tags: Vec<TagApiModel>,
+}
+
+impl ServiceDataApiModel {
+    pub fn get_started(&self) -> String {
+        crate::utils::unix_microseconds_to_string(self.started)
+    }
+
+    pub fn get_duration(&self) -> Duration {
+        Duration::from_micros(self.duration)
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct TagApiModel {
+    pub key: String,
+    pub value: String,
+}
+
+#[server]
+async fn load_services_data(
+    service_id: String,
+    service_data: String,
+) -> Result<Vec<ServiceDataApiModel>, ServerFnError> {
+    let mut response = crate::api_client::get_by_service_data(service_id, service_data)
+        .await
+        .unwrap();
+
+    response.sort_by(|i1, i2| {
+        if i1.started < i2.started {
+            std::cmp::Ordering::Greater
+        } else if i1.started > i2.started {
+            std::cmp::Ordering::Less
+        } else {
+            std::cmp::Ordering::Equal
+        }
+    });
+
+    let result: Vec<ServiceDataApiModel> = response
+        .into_iter()
+        .map(|src| ServiceDataApiModel {
+            process_id: src.process_id,
+            started: src.started,
+            duration: src.duration as u64,
+            success: src.success,
+            fail: src.fail,
+            tags: src
+                .tags
+                .into_iter()
+                .map(|tag| TagApiModel {
+                    key: tag.key,
+                    value: tag.value,
+                })
+                .collect(),
+        })
+        .collect();
+
+    Ok(result)
+
+    /*
     let state = state.to_owned();
 
     let service_id = cx.props.service_id.as_str().to_string();
@@ -181,4 +251,5 @@ fn load_services_data<'s>(
             data: Some(response),
         });
     });
+     */
 }
