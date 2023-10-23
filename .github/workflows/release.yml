@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+   #   - uses: actions-rs/toolchain@v1
+   #     with:
+   #       toolchain: stable
 
       - name: "Dioxus Deploy"
         uses: DioxusLabs/deploy-action@v1
