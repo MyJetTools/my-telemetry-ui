@@ -29,7 +29,6 @@ jobs:
       - name: Install Protoc
         uses: arduino/setup-protoc@v1   
 
-
       - run: rustup target add wasm32-unknown-unknown   
 
       - run: cargo install dioxus-cli --locked

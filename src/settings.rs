@@ -7,7 +7,7 @@ impl my_grpc_extensions::GrpcClientSettings for SettingsModel {
     async fn get_grpc_url(&self, name: &'static str) -> String {
         if name == TelemetryReaderGrpcClient::get_service_name() {
             match std::env::var("TELEMETRY_READER_GRPC_URL") {
-                Ok(url) => url,
+                Ok(url) => return url,
                 Err(_) => panic!("TELEMETRY_READER_GRPC_URL is not set"),
             }
         }

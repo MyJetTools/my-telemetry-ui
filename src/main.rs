@@ -37,10 +37,7 @@ pub mod reader_grpc {
 #[cfg(feature = "ssr")]
 lazy_static::lazy_static! {
     pub static ref APP_CTX: AppCtx = {
-        AppCtx::new(settings::SettingsModel{
-            url: "http://127.0.0.1:9413".to_string(),
-        }.into()
-        )
+        AppCtx::new(settings::SettingsModel.into())
     };
 }
 
