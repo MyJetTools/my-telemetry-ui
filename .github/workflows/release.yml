@@ -16,6 +16,11 @@ jobs:
         with:
           toolchain: stable
 
+      - name: "Dioxus Deploy"
+        uses: DioxusLabs/deploy-action@v1
+        with:
+          toolSource: "Dioxuslabs/cli"          
+
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libssl-dev          
 
@@ -30,8 +35,6 @@ jobs:
         uses: arduino/setup-protoc@v1   
 
       - run: rustup target add wasm32-unknown-unknown   
-
-      - run: cargo install dioxus-cli --locked
 
       - run: dx build --features web --release
               
