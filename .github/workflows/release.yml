@@ -16,10 +16,11 @@ jobs:
         with:
           toolchain: stable
 
-      - name: "Dioxus Deploy"
-        uses: DioxusLabs/deploy-action@v1
-        with:
-          toolSource: "Dioxuslabs/cli"          
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1             
+
+      - name: "Install Dioxus-CLI"
+        run: cargo install dioxus-cli --locked     
 
       #- name: Install dependencies
       #  run: sudo apt-get update && sudo apt-get install -y libssl-dev          
@@ -30,9 +31,6 @@ jobs:
 
       - name: Updating version
         run: sed -i -e 's/^version = .*/version = "${{ steps.get_version.outputs.VERSION }}"/' Cargo.toml
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1   
 
       - run: rustup target add wasm32-unknown-unknown   
 
