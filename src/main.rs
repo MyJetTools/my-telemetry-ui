@@ -116,3 +116,19 @@ pub fn my_layout(cx: Scope) -> Element {
         }
     }
 }
+
+#[server]
+pub async fn load_service_overview() -> Result<Vec<ServiceOverviewApiModel>, ServerFnError> {
+    let response = crate::api_client::get_list_of_services().await.unwrap();
+
+    let result = response
+        .into_iter()
+        .map(|service| ServiceOverviewApiModel {
+            id: service.id,
+            amount: service.amount,
+            avg: service.avg,
+        })
+        .collect();
+
+    Ok(result)
+}

@@ -1,7 +1,6 @@
 use std::{collections::BTreeMap, rc::Rc, sync::Arc, time::Duration};
 
 use dioxus::prelude::*;
-use dioxus_fullstack::prelude::*;
 use dioxus_router::prelude::*;
 
 use crate::{states::MainState, AppRoute};
@@ -37,7 +36,7 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
     let left_panel_state_owned = left_panel_state.to_owned();
 
     let _future = use_future(cx, (), |_| async move {
-        let response = load_service_overview().await.unwrap();
+        let response = crate::load_service_overview().await.unwrap();
 
         let mut services = BTreeMap::new();
 
@@ -133,39 +132,6 @@ impl ServiceOverviewApiModel {
     pub fn get_avg_duration(&self) -> Duration {
         Duration::from_millis(self.avg as u64)
     }
-}
-
-#[server]
-async fn load_service_overview() -> Result<Vec<ServiceOverviewApiModel>, ServerFnError> {
-    let response = crate::api_client::get_list_of_services().await.unwrap();
-
-    let result = response
-        .into_iter()
-        .map(|service| ServiceOverviewApiModel {
-            id: service.id,
-            amount: service.amount,
-            avg: service.avg,
-        })
-        .collect();
-
-    Ok(result)
-
-    /*
-    let left_panel_state = left_panel_state.to_owned();
-    cx.spawn(async move {
-        let response = crate::api_client::get_list_of_services().await.unwrap();
-
-        let mut services = BTreeMap::new();
-
-        for service in response {
-            services.insert(Rc::new(service.id.clone()), service);
-        }
-
-        let mut left_panel = left_panel_state.write();
-
-        left_panel.services = Some(Arc::new(services));
-    });
-     */
 }
 
 fn get_max_duration<'s>(services: impl Iterator<Item = &'s ServiceOverviewApiModel>) -> f64 {
