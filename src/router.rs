@@ -1,8 +1,8 @@
 //use dioxus_router_macro::Routable;
-use dioxus::prelude::*;
-use serde::{Deserialize, Serialize};
-
 use crate::{Actions, Home, LastEvents, Process};
+use dioxus::prelude::*;
+use dioxus_fullstack::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(dioxus_router_macro::Routable, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AppRoute {

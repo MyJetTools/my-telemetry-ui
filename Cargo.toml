@@ -7,7 +7,7 @@ edition = "2021"
 [features]
 default = []
 ssr = [
-    "dioxus-fullstack/axum",
+    "dioxus-fullstack/salvo",
     "flurl",
     "rust-extensions",
     "my-logger",

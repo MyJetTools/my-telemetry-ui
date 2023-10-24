@@ -75,18 +75,6 @@ impl MainState {
     }
 
     pub fn get_right_panel(&self) -> Option<&RightPanelState> {
-        match self.right_panel_state.as_ref() {
-            Some(state) => match state {
-                RightPanelState::ShowServiceOverview(_) => println!("Show service overview"),
-                RightPanelState::ShowServiceDataOverview(_, _) => {
-                    println!("Show service data overview")
-                }
-                RightPanelState::ShowProcess(_, _, _) => println!("Show process"),
-            },
-            None => {
-                println!("Right panel is empty")
-            }
-        }
         self.right_panel_state.as_ref()
     }
 

@@ -21,7 +21,6 @@ mod states;
 mod utils;
 mod views;
 
-use dioxus_router::prelude::Router;
 use views::*;
 
 use crate::states::*;
@@ -80,7 +79,7 @@ fn LastEvents(cx: Scope, service: String, action: String) -> Element {
 
 #[inline_props]
 fn Process(cx: Scope, service: String, action: String, id: i64) -> Element {
-    println!("LastEvents: {}/{}", service, action);
+    println!("LastEvents: {}/{}/{}", service, action, id);
     render! { my_layout {} }
 }
 
@@ -91,20 +90,15 @@ pub fn my_layout(cx: Scope) -> Element {
 
     match route {
         AppRoute::Home => {
-            println!("Creating provider for Home");
             use_shared_state_provider(cx, || MainState::new());
         }
         AppRoute::Actions { service } => {
-            println!("Creating provider for Actions");
             use_shared_state_provider(cx, || MainState::new_with_selected_service(service))
         }
 
-        AppRoute::LastEvents { service, action } => {
-            println!("Creating provider for Actions");
-            use_shared_state_provider(cx, || {
-                MainState::new_with_selected_action(service, from_base_64(action.as_str()))
-            })
-        }
+        AppRoute::LastEvents { service, action } => use_shared_state_provider(cx, || {
+            MainState::new_with_selected_action(service, from_base_64(action.as_str()))
+        }),
         AppRoute::Process {
             service,
             action,
