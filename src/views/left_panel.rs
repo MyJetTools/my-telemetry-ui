@@ -4,6 +4,7 @@ use dioxus::prelude::*;
 use dioxus_router::prelude::*;
 
 use crate::{states::MainState, AppRoute};
+use dioxus_fullstack::prelude::*;
 
 pub fn left_panel(cx: Scope) -> Element {
     let filter = use_state(cx, || "".to_string());
@@ -160,4 +161,20 @@ fn format_amount(value: i64) -> String {
     let value = value / 1024;
 
     return format!("{}M", value);
+}
+
+#[server]
+pub async fn load_service_overview() -> Result<Vec<ServiceOverviewApiModel>, ServerFnError> {
+    let response = crate::api_client::get_list_of_services().await.unwrap();
+
+    let result = response
+        .into_iter()
+        .map(|service| ServiceOverviewApiModel {
+            id: service.id,
+            amount: service.amount,
+            avg: service.avg,
+        })
+        .collect();
+
+    Ok(result)
 }

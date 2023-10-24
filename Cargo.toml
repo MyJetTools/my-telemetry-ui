@@ -5,9 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = ["ssr"]
+default = []
 ssr = [
-    "dioxus-fullstack/warp",
+    "dioxus-fullstack/axum",
     "rust-extensions",
     "my-logger",
     "my-grpc-extensions",

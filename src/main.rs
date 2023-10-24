@@ -3,7 +3,6 @@
 #[cfg(feature = "ssr")]
 use app_ctx::AppCtx;
 use dioxus::prelude::*;
-use dioxus_fullstack::prelude::*;
 
 #[cfg(feature = "ssr")]
 mod api_client;
@@ -15,6 +14,8 @@ mod grpc_client;
 #[cfg(feature = "ssr")]
 mod settings;
 //mod http_server;
+
+use dioxus_fullstack::prelude::*;
 
 mod router;
 mod states;
@@ -115,20 +116,4 @@ pub fn my_layout(cx: Scope) -> Element {
             dialog::render_dialog {}
         }
     }
-}
-
-#[server]
-pub async fn load_service_overview() -> Result<Vec<ServiceOverviewApiModel>, ServerFnError> {
-    let response = crate::api_client::get_list_of_services().await.unwrap();
-
-    let result = response
-        .into_iter()
-        .map(|service| ServiceOverviewApiModel {
-            id: service.id,
-            amount: service.amount,
-            avg: service.avg,
-        })
-        .collect();
-
-    Ok(result)
 }
