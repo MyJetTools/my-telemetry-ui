@@ -1,7 +1,7 @@
 [application]
 
 # App (Project) Name
-name = "my-telmetry-ui"
+name = "my-telemetry-ui"
 
 # Dioxus App Default Platform
 # desktop, web, mobile, ssr
