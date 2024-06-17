@@ -1,15 +1,14 @@
-use std::{collections::BTreeMap, rc::Rc, sync::Arc, time::Duration};
+use std::{collections::BTreeMap, rc::Rc, time::Duration};
 
 use dioxus::prelude::*;
-use dioxus_router::prelude::*;
 
 use crate::{states::MainState, AppRoute};
-use dioxus_fullstack::prelude::*;
 
-pub fn left_panel(cx: Scope) -> Element {
-    let filter = use_state(cx, || "".to_string());
+#[component]
+pub fn LeftPanel() -> Element {
+    let mut filter = use_signal(|| "".to_string());
 
-    render! {
+    rsx! {
         input {
             id: "search-input",
 
@@ -18,26 +17,28 @@ pub fn left_panel(cx: Scope) -> Element {
             placeholder: "Search",
 
             oninput: move |cx| {
-                let new_value = cx.value.trim().to_string();
+                let new_value = cx.value().trim().to_string();
                 filter.set(new_value);
             }
         }
-        div { id: "left-panel-content", left_panel_content { filter: filter.get().clone() } }
+        div { id: "left-panel-content",
+            LeftPanelContent { filter: filter.read().clone() }
+        }
     }
 }
 
-#[derive(Props, PartialEq, Eq)]
-pub struct LeftPanelContentProps {
-    pub filter: String,
-}
+#[component]
+fn LeftPanelContent(filter: String) -> Element {
+    let left_panel_state = consume_context::<Signal<MainState>>();
 
-fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
-    let left_panel_state = use_shared_state::<MainState>(cx).unwrap();
-
-    let left_panel_state_owned = left_panel_state.to_owned();
-
-    let _future = use_future(cx, (), |_| async move {
-        let response = crate::load_service_overview().await.unwrap();
+    let future = use_resource(|| async move {
+        let response = crate::load_service_overview().await;
+        let response = match response {
+            Ok(response) => response,
+            Err(err) => {
+                return Err(err);
+            }
+        };
 
         let mut services = BTreeMap::new();
 
@@ -45,10 +46,99 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
             services.insert(Rc::new(service.id.clone()), service);
         }
 
-        let mut left_panel = left_panel_state_owned.write();
-        left_panel.services = Some(Arc::new(services));
+        Ok(services)
+
+        //let mut left_panel = left_panel_state_owned.write();
+        //left_panel.services = Some(Arc::new(services));
     });
 
+    let widget_data = future.read_unchecked();
+
+    let services = match &*widget_data {
+        Some(services) => match services {
+            Ok(services) => services,
+            Err(err) => {
+                let err = format!("{}", err.to_string());
+                return rsx! {
+                    h4 { {err} }
+                };
+            }
+        },
+        None => {
+            return rsx! {
+                h4 { "Loading..." }
+            };
+        }
+    };
+
+    let mut elements = Vec::new();
+    let max_duration = get_max_duration(services.values());
+    for service in services.values() {
+        let duration = format!(
+            "{}/{:?}",
+            format_amount(service.amount),
+            service.get_avg_duration()
+        );
+
+        let duration_line = (service.avg as f64 / max_duration) * 100.0;
+
+        let duration_line = rsx! {
+            div { style: "width:100%",
+                div { style: "width:{duration_line}%; height: 2px; background-color:blue" }
+            }
+        };
+
+        if let Some(selected) = left_panel_state.read().get_selected() {
+            if selected.as_str() == service.id.as_str() {
+                elements.push(rsx! {
+                    button {
+                        r#type: "button",
+                        class: "btn btn-primary btn-sm",
+                        style: "width: 100%; text-align: left;",
+                        "{service.id} "
+                        span { class: "badge text-bg-secondary", {duration} }
+                        {duration_line}
+                    }
+                });
+                continue;
+            }
+        }
+
+        if filter.len() > 0 && !service.id.contains(filter.as_str()) {
+            continue;
+        }
+
+        let service_id_cloned = Rc::new(service.id.clone());
+
+        elements.push(rsx! {
+            button {
+                r#type: "button",
+                class: "btn btn-light btn-sm",
+                style: "width: 100%; text-align: left;",
+
+                Link {
+                    onclick: move |_| {
+                        println!("Clicked on {}", service_id_cloned);
+                        consume_context::<Signal<MainState>>()
+                            .write()
+                            .set_selected(service_id_cloned.clone());
+                    },
+                    to: AppRoute::Actions {
+                        service: service.id.clone(),
+                    },
+                    "{service.id} "
+                }
+                span { class: "badge text-bg-secondary", {duration} }
+                {duration_line}
+            }
+        });
+    }
+
+    rsx! {
+        {elements.into_iter()}
+    }
+
+    /*
     let left_panel = left_panel_state.read();
 
     let mut elements = Vec::new();
@@ -66,7 +156,9 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
                 let duration_line = (service.avg as f64 / max_duration) * 100.0;
 
                 let duration_line = rsx! {
-                    div { style: "width:100%", div { style: "width:{duration_line}%; height: 2px; background-color:blue" } }
+                    div { style: "width:100%",
+                        div { style: "width:{duration_line}%; height: 2px; background-color:blue" }
+                    }
                 };
 
                 if let Some(selected) = left_panel.get_selected() {
@@ -77,15 +169,15 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
                                 class: "btn btn-primary btn-sm",
                                 style: "width: 100%; text-align: left;",
                                 "{service.id} "
-                                span { class: "badge text-bg-secondary", duration }
-                                duration_line
+                                span { class: "badge text-bg-secondary", {duration} }
+                                {duration_line}
                             }
                         });
                         continue;
                     }
                 }
 
-                if cx.props.filter.len() > 0 && !service.id.contains(cx.props.filter.as_str()) {
+                if filter.len() > 0 && !service.id.contains(filter.as_str()) {
                     continue;
                 }
 
@@ -100,26 +192,32 @@ fn left_panel_content<'s>(cx: Scope<'s, LeftPanelContentProps>) -> Element {
                         Link {
                             onclick: move |_| {
                                 println!("Clicked on {}", service_id_cloned);
-                                let left_panel_state = use_shared_state::<MainState>(cx).unwrap();
-                                left_panel_state.write().set_selected(service_id_cloned.clone());
+                                consume_context::<Signal<MainState>>()
+                                    .write()
+                                    .set_selected(service_id_cloned.clone());
                             },
                             to: AppRoute::Actions {
-    service: service.id.clone(),
-},
+                                service: service.id.clone(),
+                            },
                             "{service.id} "
                         }
-                        span { class: "badge text-bg-secondary", duration }
-                        duration_line
+                        span { class: "badge text-bg-secondary", {duration} }
+                        {duration_line}
                     }
                 });
             }
         }
         None => {
-            elements.push(rsx! { h4 { "Loading..." } });
+            elements.push(rsx! {
+                h4 { "Loading..." }
+            });
         }
     }
 
-    render!(elements.into_iter())
+    rsx! {
+        {elements.into_iter()}
+    }
+     */
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]

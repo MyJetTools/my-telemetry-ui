@@ -1,38 +1,34 @@
 use std::{rc::Rc, time::Duration};
 
 use dioxus::prelude::*;
-use dioxus_fullstack::prelude::*;
 
 use crate::states::{DialogState, MainState};
 
 use super::TagApiModel;
-#[derive(Props, PartialEq, Eq)]
-pub struct ProcessOverviewProps {
-    pub service_id: Rc<String>,
-    pub data: Rc<String>,
-    pub process_id: i64,
-}
 
 struct ProcessOverviewState {
-    data: Option<Vec<MetricEventApiModel>>,
+    data: Option<Vec<Rc<MetricEventApiModel>>>,
 }
 
-pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
-    let widget_state = use_state(cx, || ProcessOverviewState { data: None });
+#[component]
+pub fn ProcessOverview(service_id: Rc<String>, data: Rc<String>, process_id: i64) -> Element {
+    let widget_state = use_signal(|| ProcessOverviewState { data: None });
 
-    let content = match widget_state.get().data.as_ref() {
+    let content = match widget_state.read().data.clone() {
         Some(items) => {
             if items.len() == 0 {
-                rsx! { h1 { "No Data" } }
+                rsx! {
+                    h1 { "No Data" }
+                }
             } else {
                 let mut to_render = Vec::new();
 
-                let min_max = get_min_max(items);
+                let min_max = get_min_max(&items);
 
                 for item in items {
                     let started = item.get_started();
 
-                    let bg_color = if &item.data == cx.props.data.as_str() {
+                    let bg_color = if &item.data == data.as_str() {
                         "lightgray"
                     } else {
                         "white"
@@ -58,8 +54,7 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                                     button {
                                         class: "btn btn-sm btn-primary",
                                         onclick: move |_| {
-                                            use_shared_state::<MainState>(cx)
-                                                .unwrap()
+                                            consume_context::<Signal<MainState>>()
                                                 .write()
                                                 .show_dialog(DialogState::ShowKeyValue {
                                                     the_key: key_show_dialog.clone(),
@@ -72,11 +67,14 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                             }
                         } else {
                             rsx! {
-                                span { style: "color:black", tag.value.as_str() }
+                                span { style: "color:black", {tag.value.as_str()} }
                             }
                         };
                         rsx! {
-                            div { style: "padding:0; color:gray;", " {key.as_str()}: ", value }
+                            div { style: "padding:0; color:gray;",
+                                " {key.as_str()}: "
+                                {value}
+                            }
                         }
                     });
 
@@ -101,17 +99,18 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
 
                     let data_to_expand = data.clone();
 
+                    let item_spawned = item.clone();
+
                     let data_to_render = if item.data.len() > 64 {
                         rsx! {
                             span {
                                 button {
                                     class: "btn btn-sm btn-light",
                                     onclick: move |_| {
-                                        use_shared_state::<MainState>(cx)
-                                            .unwrap()
+                                        consume_context::<Signal<MainState>>()
                                             .write()
                                             .show_dialog(DialogState::ShowKeyValue {
-                                                the_key: Rc::new(format!("Expanding data for {}", item.name)),
+                                                the_key: Rc::new(format!("Expanding data for {}", item_spawned.name)),
                                                 value: data_to_expand.clone(),
                                             });
                                     },
@@ -120,19 +119,23 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                             }
                         }
                     } else {
-                        rsx! { span { "{item.data}" } }
+                        rsx! {
+                            span { "{item.data}" }
+                        }
                     };
 
                     to_render.push(rsx! {
-                        tr { class: "table-line", style: "background-color:{bg_color}",
-                            td { started }
+                        tr {
+                            class: "table-line",
+                            style: "background-color:{bg_color}",
+                            td { {started} }
                             td {
                                 div { style: "padding:0", "{item.name}" }
-                                div { style: "padding:0; font-size:10px", data_to_render }
+                                div { style: "padding:0; font-size:10px", {data_to_render} }
                             }
-                            td { duration }
-                            td { style: "color:{color}", message }
-                            td { tags }
+                            td { {duration} }
+                            td { style: "color:{color}", {message} }
+                            td { {tags} }
                         }
                     });
 
@@ -140,7 +143,7 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                         tr {
                             td { colspan: 5,
                                 div { style: "padding:0; width:{duration_line_left}%; font-size:8px;text-align: right;",
-                                    delay
+                                    {delay}
                                 }
                                 div { style: "padding:0; margin-left:{duration_line_left}%; width:{duration_line_width}%; background-color:blue; height:2px" }
                             }
@@ -157,30 +160,30 @@ pub fn process_overview<'s>(cx: Scope<'s, ProcessOverviewProps>) -> Element {
                             td { "Message" }
                             td { "Tags" }
                         }
-                        to_render.into_iter()
+                        {to_render.into_iter()}
                     }
                 }
             }
         }
         None => {
-            let widget_state = widget_state.to_owned();
-            let process_id = cx.props.process_id;
-            cx.spawn(async move {
+            let mut widget_state = widget_state.to_owned();
+            spawn(async move {
                 let response = load_metric_events(process_id).await.unwrap();
-                widget_state.set(ProcessOverviewState {
-                    data: Some(response),
-                })
+                widget_state.write().data =
+                    Some(response.into_iter().map(|itm| Rc::new(itm)).collect());
             });
-            rsx! { h1 { "Loading..." } }
+            rsx! {
+                h1 { "Loading..." }
+            }
         }
     };
 
-    render! {
+    rsx! {
         div { style: "text-align: left;",
-            b { "{cx.props.process_id}" }
+            b { "{process_id}" }
             hr {}
         }
-        content
+        {content}
     }
 }
 
@@ -190,7 +193,7 @@ pub struct MinMax {
     max_duration: i64,
 }
 
-fn get_min_max(items: &[MetricEventApiModel]) -> MinMax {
+fn get_min_max(items: &[Rc<MetricEventApiModel>]) -> MinMax {
     let mut result = {
         let first = items.first().unwrap();
         MinMax {

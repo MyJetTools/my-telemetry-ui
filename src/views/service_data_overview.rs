@@ -6,11 +6,10 @@ use crate::{
     utils::to_base_64,
 };
 use dioxus::prelude::*;
-use dioxus_fullstack::prelude::*;
 use dioxus_router::prelude::Link;
 
 pub struct ServiceDataOverviewState {
-    data: Option<Vec<ServiceDataApiModel>>,
+    data: Option<Rc<Vec<ServiceDataApiModel>>>,
 }
 
 impl ServiceDataOverviewState {
@@ -19,33 +18,29 @@ impl ServiceDataOverviewState {
     }
 }
 
-#[derive(Props, PartialEq, Eq)]
-pub struct ServiceDataOverviewProps {
-    pub service_id: Rc<String>,
-    pub data: Rc<String>,
-}
+#[component]
+pub fn ServiceDataOverview(service_id: Rc<String>, data: Rc<String>) -> Element {
+    let widget_state = use_signal(|| ServiceDataOverviewState::new());
 
-pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Element {
-    let widget_state = use_state(cx, || ServiceDataOverviewState::new());
+    let widget_state_data = widget_state.read().data.clone();
+    match widget_state_data {
+        Some(service_data) => {
+            let max_duration = get_max(&service_data);
+            let items = service_data.iter().map(|service_data| {
+                let started = service_data.get_started();
+                let duration = format!("{:?}", service_data.get_duration());
 
-    match widget_state.get().data.as_ref() {
-        Some(data) => {
-            let max_duration = get_max(data);
-            let items = data.iter().map(|data| {
-                let started = data.get_started();
-                let duration = format!("{:?}", data.get_duration());
+                let bar_duration = (service_data.duration as f64 / max_duration) * 100.0;
 
-                let bar_duration = (data.duration as f64 / max_duration) * 100.0;
-
-                let (message, color) = match &data.success {
+                let (message, color) = match &service_data.success {
                     Some(success) => (success.as_str(), "green"),
-                    None => match &data.fail {
+                    None => match &service_data.fail {
                         Some(error) => (error.as_str(), "red"),
                         None => ("", "black"),
                     },
                 };
 
-                let tags = data.tags.iter().map(|tag| {
+                let tags = service_data.tags.iter().map(|tag| {
                     let key = Rc::new(tag.key.to_string());
                     let key_show_dialog = key.clone();
                     let value = Rc::new(tag.value.to_string());
@@ -57,8 +52,7 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
                                 button {
                                     class: "btn btn-sm btn-primary",
                                     onclick: move |_| {
-                                        use_shared_state::<MainState>(cx)
-                                            .unwrap()
+                                        consume_context::<Signal<MainState>>()
                                             .write()
                                             .show_dialog(DialogState::ShowKeyValue {
                                                 the_key: key_show_dialog.clone(),
@@ -71,47 +65,50 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
                         }
                     } else {
                         rsx! {
-                            span { style: "color:black", tag.value.as_str() }
+                            span { style: "color:black", {tag.value.as_str()} }
                         }
                     };
                     rsx! {
-                        div { style: "padding:0; color:gray;", " {key.as_str()}: ", value }
+                        div { style: "padding:0; color:gray;",
+                            " {key.as_str()}: "
+                            {value}
+                        }
                     }
                 });
 
-                let process_id = data.process_id;
-                let service_id_2 = cx.props.service_id.to_string();
-                let action_base_64 = to_base_64( cx.props.data.as_str());
+                let process_id = service_data.process_id;
+                let service_id_1 = service_id.clone();
+                let service_id_2 = service_id.clone();
+                let action_base_64 = to_base_64(data.as_str());
+
+                let data_cloned = data.clone();
 
                 rsx! {
                     tr { class: "table-line",
                         td {
-                            started,
-                            div { style: "width:100%;padding:0", div { style: "width: {bar_duration}%; height: 2px; background-color:green" } }
+                            {started},
+                            div { style: "width:100%;padding:0",
+                                div { style: "width: {bar_duration}%; height: 2px; background-color:green" }
+                            }
                         }
-                        td { duration }
-                        td { style: "color: {color}", message }
-                        td { tags }
+                        td { {duration} }
+                        td { style: "color: {color}", {message} }
+                        td { {tags} }
                         td {
                             button {
                                 class: "btn btn-sm btn-primary",
                                 style: "padding: 2px 5px;",
                                 Link {
                                     onclick: move |_| {
-                                        let right_panel_state = use_shared_state::<MainState>(cx).unwrap();
-                                        right_panel_state
+                                        consume_context::<Signal<MainState>>()
                                             .write()
-                                            .set_show_process(
-                                                cx.props.service_id.clone(),
-                                                cx.props.data.clone(),
-                                                process_id,
-                                            );
+                                            .set_show_process(service_id_1.clone(), data_cloned.clone(), process_id);
                                     },
                                     to: AppRoute::Process {
-    service: service_id_2.to_string(),
-    action: action_base_64,
-    id: process_id,
-},
+                                        service: service_id_2.to_string(),
+                                        action: action_base_64,
+                                        id: process_id,
+                                    },
                                     "Show"
                                 }
                             }
@@ -120,9 +117,9 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
                 }
             });
 
-            render! {
+            rsx! {
                 div { style: "text-align: left;",
-                    b { "{cx.props.data}" }
+                    b { "{data}" }
                     hr {}
                 }
                 table { class: "table", style: "text-align: left;",
@@ -133,19 +130,21 @@ pub fn service_data_overview<'s>(cx: Scope<'s, ServiceDataOverviewProps>) -> Ele
                         th { "Tags" }
                         th {}
                     }
-                    items
+                    {items}
                 }
             }
         }
         None => {
-            let service_id = cx.props.service_id.as_ref().to_string();
-            let service_data = cx.props.data.as_ref().to_string();
-            let widget_state = widget_state.to_owned();
-            cx.spawn(async move {
+            let service_id = service_id.to_string();
+            let service_data = data.to_string();
+            let mut widget_state = widget_state.to_owned();
+            spawn(async move {
                 let data = load_services_data(service_id, service_data).await.unwrap();
-                widget_state.set(ServiceDataOverviewState { data: Some(data) })
+                widget_state.write().data = Some(Rc::new(data));
             });
-            render! { h1 { "Loading" } }
+            rsx! {
+                h1 { "Loading" }
+            }
         }
     }
 }

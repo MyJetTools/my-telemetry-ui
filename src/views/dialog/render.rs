@@ -1,10 +1,11 @@
 use dioxus::prelude::*;
 
 use crate::states::{DialogState, MainState};
-use super::show_key_value;
+use super::ShowKeyValue;
 
-pub fn render_dialog(cx: Scope) -> Element {
-    let main_state = use_shared_state::<MainState>(cx).unwrap();
+#[component]
+pub fn RenderDialog() -> Element {
+    let main_state = consume_context::<Signal<MainState>>();
 
     let dialog = main_state.read();
 
@@ -17,7 +18,9 @@ pub fn render_dialog(cx: Scope) -> Element {
   
             let (dialog_content, header) = match dialog_state {
                 DialogState::ShowKeyValue { the_key, value } => {
-                    let result = rsx! { show_key_value { value: value.clone() } };
+                    let result = rsx! {
+                        ShowKeyValue { value: value.clone() }
+                    };
                     (result, format!("Show Value for Key {}", the_key.as_str()))
                 }
             };
@@ -33,12 +36,12 @@ pub fn render_dialog(cx: Scope) -> Element {
                                     r#type: "button",
                                     class: "btn btn-default btn-sm",
                                     onclick: move |_| {
-                                        use_shared_state::<MainState>(cx).unwrap().write().hide_dialog();
+                                        consume_context::<Signal<MainState>>().write().hide_dialog();
                                     },
                                     "X"
                                 }
                             }
-                            dialog_content
+                            {dialog_content}
                         }
                     }
                 }
@@ -47,5 +50,5 @@ pub fn render_dialog(cx: Scope) -> Element {
         .into(),
     };
 
-    render!(dialog)
+    dialog
 }

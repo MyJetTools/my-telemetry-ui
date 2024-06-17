@@ -1,18 +1,14 @@
-use std::{collections::BTreeMap, rc::Rc, sync::Arc};
-
-use crate::views::ServiceOverviewApiModel;
+use std::rc::Rc;
 
 use super::{DialogState, RightPanelState};
 
 pub struct MainState {
-    pub services: Option<Arc<BTreeMap<Rc<String>, ServiceOverviewApiModel>>>,
     pub right_panel_state: Option<RightPanelState>,
     pub dialog: Option<DialogState>,
 }
 impl MainState {
     pub fn new() -> Self {
         Self {
-            services: None,
             right_panel_state: None,
             dialog: None,
         }
@@ -20,7 +16,6 @@ impl MainState {
 
     pub fn new_with_selected_service(service_name: String) -> Self {
         Self {
-            services: None,
             right_panel_state: Some(RightPanelState::ShowServiceOverview(Rc::new(service_name))),
             dialog: None,
         }
@@ -28,7 +23,6 @@ impl MainState {
 
     pub fn new_with_selected_action(service_name: String, action: String) -> Self {
         Self {
-            services: None,
             right_panel_state: Some(RightPanelState::ShowServiceDataOverview(
                 Rc::new(service_name),
                 Rc::new(action),
@@ -43,7 +37,6 @@ impl MainState {
         process_id: i64,
     ) -> Self {
         Self {
-            services: None,
             right_panel_state: Some(RightPanelState::ShowProcess(
                 Rc::new(service_name),
                 Rc::new(action),
@@ -74,8 +67,8 @@ impl MainState {
         self.right_panel_state = Some(RightPanelState::ShowProcess(service_id, data, process_id));
     }
 
-    pub fn get_right_panel(&self) -> Option<&RightPanelState> {
-        self.right_panel_state.as_ref()
+    pub fn get_right_panel(&self) -> Option<RightPanelState> {
+        self.right_panel_state.clone()
     }
 
     pub fn get_dialog_state(&self) -> Option<&DialogState> {

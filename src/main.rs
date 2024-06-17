@@ -1,21 +1,17 @@
-#![allow(non_snake_case)]
-
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 use app_ctx::AppCtx;
 use dioxus::prelude::*;
 
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 mod api_client;
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 mod app_ctx;
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 mod grpc_client;
 
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 mod settings;
 //mod http_server;
-
-use dioxus_fullstack::prelude::*;
 
 mod router;
 mod states;
@@ -29,12 +25,12 @@ use crate::states::*;
 use crate::router::*;
 use crate::utils::from_base_64;
 
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 pub mod reader_grpc {
     tonic::include_proto!("reader");
 }
 
-#[cfg(feature = "ssr")]
+#[cfg(feature = "server")]
 lazy_static::lazy_static! {
     pub static ref APP_CTX: AppCtx = {
         AppCtx::new(settings::SettingsModel.into())
@@ -42,14 +38,13 @@ lazy_static::lazy_static! {
 }
 
 fn main() {
-    let config = LaunchBuilder::<FullstackRouterConfig<AppRoute>>::router();
+    let cfg = dioxus::fullstack::Config::new();
 
-    #[cfg(feature = "ssr")]
-    let config = config.addr(std::net::SocketAddr::from(([0, 0, 0, 0], 8080)));
-
+    #[cfg(feature = "server")]
+    let cfg = cfg.addr(([0, 0, 0, 0], 9001));
     //let config = LaunchBuilder::new(app);
     /*
-       #[cfg(feature = "ssr")]
+       #[cfg(feature = "server")]
        config
            .incremental(
                IncrementalRendererConfig::default()
@@ -57,63 +52,66 @@ fn main() {
            )
            .launch();
     */
-    //#[cfg(not(feature = "ssr"))]
-    config.launch();
-}
-
-fn Home(cx: Scope) -> Element {
-    println!("Home page");
-    render! { my_layout {} }
-}
-
-#[inline_props]
-fn Actions(cx: Scope, service: String) -> Element {
-    println!("Actions: {}", service);
-    render! { my_layout {} }
-}
-
-#[inline_props]
-fn LastEvents(cx: Scope, service: String, action: String) -> Element {
-    println!("LastEvents: {}/{}", service, action);
-    render! { my_layout {} }
-}
-
-#[inline_props]
-fn Process(cx: Scope, service: String, action: String, id: i64) -> Element {
-    println!("LastEvents: {}/{}/{}", service, action, id);
-    render! { my_layout {} }
-}
-
-pub fn my_layout(cx: Scope) -> Element {
-    let route: AppRoute = dioxus_router::hooks::use_route(&cx).unwrap();
-
-    println!("Route: {:?}", route);
-
-    match route {
-        AppRoute::Home => {
-            use_shared_state_provider(cx, || MainState::new());
+    //#[cfg(not(feature = "server"))]
+    LaunchBuilder::fullstack().with_cfg(cfg).launch(|| {
+        rsx! {
+            Router::<AppRoute> {}
         }
-        AppRoute::Actions { service } => {
-            use_shared_state_provider(cx, || MainState::new_with_selected_service(service))
-        }
-
-        AppRoute::LastEvents { service, action } => use_shared_state_provider(cx, || {
-            MainState::new_with_selected_action(service, from_base_64(action.as_str()))
-        }),
-        AppRoute::Process {
-            service,
-            action,
-            id,
-        } => use_shared_state_provider(cx, || {
-            MainState::new_with_selected_process(service, from_base_64(action.as_str()), id)
-        }),
+    })
+}
+#[component]
+fn Home() -> Element {
+    use_context_provider(|| Signal::new(MainState::new()));
+    rsx! {
+        MyLayout {}
     }
+}
 
-    render! {
+#[component]
+fn Actions(service: String) -> Element {
+    println!("Actions: {}", service);
+    use_context_provider(|| Signal::new(MainState::new_with_selected_service(service)));
+    rsx! {
+        MyLayout {}
+    }
+}
+
+#[component]
+fn LastEvents(service: String, action: String) -> Element {
+    println!("LastEvents: {}/{}", service, action);
+    use_context_provider(|| {
+        Signal::new(MainState::new_with_selected_action(
+            service,
+            from_base_64(action.as_str()),
+        ))
+    });
+    rsx! {
+        MyLayout {}
+    }
+}
+
+#[component]
+fn Process(service: String, action: String, id: i64) -> Element {
+    println!("LastEvents: {}/{}/{}", service, action, id);
+    use_context_provider(|| {
+        Signal::new(MainState::new_with_selected_process(
+            service,
+            from_base_64(action.as_str()),
+            id,
+        ))
+    });
+    rsx! {
+        MyLayout {}
+    }
+}
+
+#[component]
+pub fn MyLayout() -> Element {
+    rsx! {
         div { id: "layout",
-            div { id: "left-panel", left_panel {} }
-            div { id: "right-panel", right_panel {} }
-            dialog::render_dialog {}
+            div { id: "left-panel", LeftPanel {} }
+            div { id: "right-panel", RightPanel {} }
+            dialog::RenderDialog {}
         }
     }
 }
