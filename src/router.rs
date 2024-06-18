@@ -20,4 +20,12 @@ pub enum AppRoute {
         action: String,
         id: i64,
     },
+
+    #[route("/:..segments")]
+    NotFound { segments: Vec<String> },
+}
+
+#[component]
+fn NotFound(segments: Vec<String>) -> Element {
+    rsx! { "404: Not Found" }
 }
