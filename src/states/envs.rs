@@ -37,6 +37,7 @@ impl Envs {
             if let Some(envs) = self.envs.as_ref() {
                 if let Some(env) = envs.first() {
                     self.selected_env = env.clone();
+                    crate::storage::selected_env::set(env.as_str());
                 }
             }
         }
