@@ -1,9 +1,13 @@
-use std::rc::Rc;
+use std::{collections::BTreeMap, rc::Rc};
 
-use super::{DialogState, Envs, RightPanelState};
+use crate::ServiceOverviewApiModel;
+
+use super::{DataState, DialogState, Envs, RightPanelState};
 
 pub struct MainState {
     pub envs: Envs,
+    pub left_panel: DataState<Rc<BTreeMap<Rc<String>, ServiceOverviewApiModel>>>,
+    pub selected_service: Option<Rc<String>>,
     pub right_panel_state: Option<RightPanelState>,
     pub dialog: Option<DialogState>,
 }
@@ -13,6 +17,8 @@ impl MainState {
             right_panel_state: None,
             dialog: None,
             envs: Envs::new(),
+            left_panel: DataState::None,
+            selected_service: None,
         }
     }
 
@@ -21,6 +27,8 @@ impl MainState {
             right_panel_state: Some(RightPanelState::ShowServiceOverview(Rc::new(service_name))),
             dialog: None,
             envs: Envs::new(),
+            left_panel: DataState::None,
+            selected_service: None,
         }
     }
 
@@ -32,6 +40,8 @@ impl MainState {
             )),
             dialog: None,
             envs: Envs::new(),
+            left_panel: DataState::None,
+            selected_service: None,
         }
     }
 
@@ -48,6 +58,8 @@ impl MainState {
             )),
             dialog: None,
             envs: Envs::new(),
+            left_panel: DataState::None,
+            selected_service: None,
         }
     }
 
@@ -86,5 +98,12 @@ impl MainState {
 
     pub fn hide_dialog(&mut self) {
         self.dialog = None;
+    }
+
+    pub fn env_updated(&mut self) {
+        self.left_panel = DataState::None;
+        self.right_panel_state = None;
+        self.dialog = None;
+        self.selected_service = None;
     }
 }

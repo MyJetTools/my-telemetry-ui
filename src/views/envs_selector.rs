@@ -4,7 +4,7 @@ use crate::{states::*, AppRoute};
 
 #[component]
 pub fn EnvsSelector() -> Element {
-    let main_state = consume_context::<Signal<MainState>>();
+    let mut main_state = consume_context::<Signal<MainState>>();
 
     let main_state_read_access = main_state.read();
 
@@ -30,11 +30,12 @@ pub fn EnvsSelector() -> Element {
             oninput: move |ctx| {
                 let value = ctx.value();
                 crate::storage::selected_env::set(value.as_str());
-                consume_context::<Signal<MainState>>()
-                    .write()
-                    .envs
-                    .set_active_env(value.as_str());
-                navigator().push(AppRoute::Home {});
+                {
+                    let mut main_state = main_state.write();
+                    main_state.envs.set_active_env(value.as_str());
+                    main_state.env_updated();
+                }
+                navigator().push(AppRoute::SelectEnv { env: value });
             },
             {envs_options}
         }

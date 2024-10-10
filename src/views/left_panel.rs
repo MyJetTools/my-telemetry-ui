@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, rc::Rc, time::Duration};
 
 use dioxus::prelude::*;
 
-use crate::{states::MainState, AppRoute};
+use crate::{states::MainState, AppRoute, DataState};
 
 use super::*;
 
@@ -29,45 +29,48 @@ pub fn LeftPanel() -> Element {
 
 #[component]
 fn LeftPanelContent(filter: String) -> Element {
-    let left_panel_state = consume_context::<Signal<MainState>>();
+    let mut main_state = consume_context::<Signal<MainState>>();
 
-    let future = use_resource(|| async move {
-        let env = crate::storage::selected_env::get();
-        let response = crate::load_service_overview(env).await;
-        let response = match response {
-            Ok(response) => response,
-            Err(err) => {
-                return Err(err);
-            }
-        };
+    let main_state_read_model = main_state.read();
 
-        let mut services = BTreeMap::new();
+    let services = match main_state_read_model.left_panel.as_ref() {
+        DataState::None => {
+            spawn(async move {
+                main_state.write().left_panel = DataState::Loading;
 
-        for service in response {
-            services.insert(Rc::new(service.id.clone()), service);
+                let env = crate::storage::selected_env::get();
+                let response = crate::load_service_overview(env).await;
+                let response = match response {
+                    Ok(response) => response,
+                    Err(err) => {
+                        main_state.write().left_panel = DataState::Error(err.to_string());
+                        return;
+                    }
+                };
+
+                let mut services = BTreeMap::new();
+
+                for service in response {
+                    services.insert(Rc::new(service.id.clone()), service);
+                }
+                main_state.write().left_panel = DataState::Loaded(Rc::new(services));
+            });
+
+            return rsx! {
+                {"Loading..."}
+            };
         }
 
-        Ok(services)
-
-        //let mut left_panel = left_panel_state_owned.write();
-        //left_panel.services = Some(Arc::new(services));
-    });
-
-    let widget_data = future.read_unchecked();
-
-    let services = match &*widget_data {
-        Some(services) => match services {
-            Ok(services) => services,
-            Err(err) => {
-                let err = format!("{}", err.to_string());
-                return rsx! {
-                    h4 { {err} }
-                };
-            }
-        },
-        None => {
+        DataState::Loading => {
             return rsx! {
-                h4 { "Loading..." }
+                {"Loading..."}
+            }
+        }
+
+        DataState::Loaded(data) => data,
+        DataState::Error(err) => {
+            return rsx! {
+                div { style: "color:red", {err.as_str()} }
             };
         }
     };
@@ -89,7 +92,7 @@ fn LeftPanelContent(filter: String) -> Element {
             }
         };
 
-        if let Some(selected) = left_panel_state.read().get_selected() {
+        if let Some(selected) = main_state_read_model.selected_service.as_ref() {
             if selected.as_str() == service.id.as_str() {
                 elements.push(rsx! {
                     button {
@@ -119,10 +122,8 @@ fn LeftPanelContent(filter: String) -> Element {
 
                 Link {
                     onclick: move |_| {
-                        println!("Clicked on {}", service_id_cloned);
-                        consume_context::<Signal<MainState>>()
-                            .write()
-                            .set_selected(service_id_cloned.clone());
+                        let mut write_access = main_state.write();
+                        write_access.set_selected(service_id_cloned.clone());
                     },
                     to: AppRoute::Actions {
                         service: service.id.clone(),
