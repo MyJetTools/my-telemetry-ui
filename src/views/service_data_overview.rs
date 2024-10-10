@@ -1,9 +1,9 @@
 use std::{rc::Rc, time::Duration};
 
 use crate::{
-    router::AppRoute,
     states::{DialogState, MainState},
     utils::to_base_64,
+    AppRoute,
 };
 use dioxus::prelude::*;
 use dioxus_router::prelude::Link;
@@ -139,7 +139,10 @@ pub fn ServiceDataOverview(service_id: Rc<String>, data: Rc<String>) -> Element 
             let service_data = data.to_string();
             let mut widget_state = widget_state.to_owned();
             spawn(async move {
-                let data = load_services_data(service_id, service_data).await.unwrap();
+                let env = crate::storage::selected_env::get();
+                let data = load_services_data(env, service_id, service_data)
+                    .await
+                    .unwrap();
                 widget_state.write().data = Some(Rc::new(data));
             });
             rsx! {
@@ -189,12 +192,14 @@ pub struct TagApiModel {
 
 #[server]
 async fn load_services_data(
+    env: String,
     service_id: String,
     service_data: String,
 ) -> Result<Vec<ServiceDataApiModel>, ServerFnError> {
-    let mut response = crate::api_client::get_by_service_data(service_id, service_data)
-        .await
-        .unwrap();
+    let mut response =
+        crate::server::api_client::get_by_service_data(env.as_str(), service_id, service_data)
+            .await
+            .unwrap();
 
     response.sort_by(|i1, i2| {
         if i1.started < i2.started {

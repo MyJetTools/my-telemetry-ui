@@ -3,8 +3,8 @@ use std::{rc::Rc, time::Duration};
 use dioxus::prelude::*;
 
 use crate::{
-    router::AppRoute,
     states::{DialogState, MainState},
+    AppRoute,
 };
 
 #[component]
@@ -13,9 +13,8 @@ pub fn ServicesOverview() -> Element {
 
     let main_resource = use_resource(use_reactive!(|(main_state,)| async move {
         let service_id = main_state.read().get_selected().unwrap();
-        load_services(service_id.as_str().to_string())
-            .await
-            .unwrap()
+        let env = crate::storage::selected_env::get();
+        load_services(env, service_id.to_string()).await.unwrap()
     },));
 
     let widget_data = main_resource.read_unchecked();
@@ -178,10 +177,14 @@ impl ServiceApiModel {
 }
 
 #[server]
-async fn load_services(service_id: String) -> Result<Vec<ServiceApiModel>, ServerFnError> {
-    let response = crate::api_client::get_services_overview(service_id.clone())
-        .await
-        .unwrap();
+async fn load_services(
+    env: String,
+    service_id: String,
+) -> Result<Vec<ServiceApiModel>, ServerFnError> {
+    let response =
+        crate::server::api_client::get_services_overview(env.as_str(), service_id.clone())
+            .await
+            .unwrap();
 
     let result: Vec<ServiceApiModel> = response
         .into_iter()

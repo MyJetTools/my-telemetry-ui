@@ -1,8 +1,9 @@
 use std::rc::Rc;
 
-use super::{DialogState, RightPanelState};
+use super::{DialogState, Envs, RightPanelState};
 
 pub struct MainState {
+    pub envs: Envs,
     pub right_panel_state: Option<RightPanelState>,
     pub dialog: Option<DialogState>,
 }
@@ -11,6 +12,7 @@ impl MainState {
         Self {
             right_panel_state: None,
             dialog: None,
+            envs: Envs::new(),
         }
     }
 
@@ -18,6 +20,7 @@ impl MainState {
         Self {
             right_panel_state: Some(RightPanelState::ShowServiceOverview(Rc::new(service_name))),
             dialog: None,
+            envs: Envs::new(),
         }
     }
 
@@ -28,6 +31,7 @@ impl MainState {
                 Rc::new(action),
             )),
             dialog: None,
+            envs: Envs::new(),
         }
     }
 
@@ -43,6 +47,7 @@ impl MainState {
                 process_id,
             )),
             dialog: None,
+            envs: Envs::new(),
         }
     }
 

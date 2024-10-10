@@ -20,6 +20,9 @@ server = [
     "lazy_static",
     "serde_json",
     "serde_yaml",
+    "my-ssh",
+    "my-settings-reader",
+    "dioxus-utils/server",
 
 ]
 web = ["dioxus/web"]
@@ -29,17 +32,27 @@ web = ["dioxus/web"]
 rust-extensions = { tag = "0.1.4", git = "https://github.com/MyJetTools/rust-extensions.git", features = [
     "base64",
 ] }
+
 my-logger = { tag = "1.1.0", git = "https://github.com/MyJetTools/my-logger.git", optional = true }
 
-my-grpc-extensions = { tag = "0.6.0", git = "https://github.com/MyJetTools/my-grpc-extensions.git", features = [
+my-grpc-extensions = { tag = "0.6.2", git = "https://github.com/MyJetTools/my-grpc-extensions.git", features = [
     "grpc-client",
+    "with-unix-socket",
+    "with-ssh",
 ], optional = true }
 
+my-settings-reader = { tag = "0.3.2", git = "https://github.com/MyJetTools/my-settings-reader.git", optional = true }
 
-dioxus = { version = "0.5.1", features = ["fullstack", "router"] }
+my-ssh = { tag = "0.1.1", git = "https://github.com/MyJetTools/my-ssh.git", optional = true }
+
+dioxus = { version = "0.5", features = ["fullstack", "router"] }
 serde = "*"
 chrono = "*"
 
+
+dioxus-utils = { tag = "0.1.0", git = "https://github.com/MyJetTools/dioxus-utils.git", features = [
+    "fullstack",
+] }
 
 tokio = { version = "*", features = ["full"], optional = true }
 serde_json = { version = "*", optional = true }
@@ -59,4 +72,4 @@ base64 = { version = "*" }
 
 
 [build-dependencies]
-ci-utils = { git = "https://github.com/MyJetTools/ci-utils.git", tag = "0.1.0" }
+ci-utils = { git = "https://github.com/MyJetTools/ci-utils.git", tag = "0.1.1" }

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
-use crate::reader_grpc::{GetByProcessIdRequest, MetricEventGrpcModel};
+use crate::server::reader_grpc::{GetByProcessIdRequest, MetricEventGrpcModel};
 
 impl MetricEventGrpcModel {
     pub fn get_started(&self) -> DateTimeAsMicroseconds {
@@ -14,9 +14,13 @@ impl MetricEventGrpcModel {
     }
 }
 
-pub async fn get_by_process_id(process_id: i64) -> Result<Vec<MetricEventGrpcModel>, String> {
-    let response = crate::APP_CTX
-        .grpc_client
+pub async fn get_by_process_id(
+    env: &str,
+    process_id: i64,
+) -> Result<Vec<MetricEventGrpcModel>, String> {
+    let response = crate::server::APP_CTX
+        .get_grpc_client(env)
+        .await
         .get_by_process_id(GetByProcessIdRequest { process_id })
         .await;
 

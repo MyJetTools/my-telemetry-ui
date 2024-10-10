@@ -4,18 +4,18 @@ use dioxus::prelude::*;
 
 use crate::{states::MainState, AppRoute};
 
+use super::*;
+
 #[component]
 pub fn LeftPanel() -> Element {
     let mut filter = use_signal(|| "".to_string());
 
     rsx! {
+        EnvsSelector {}
         input {
             id: "search-input",
-
             class: "form-control",
-
             placeholder: "Search",
-
             oninput: move |cx| {
                 let new_value = cx.value().trim().to_string();
                 filter.set(new_value);
@@ -32,7 +32,8 @@ fn LeftPanelContent(filter: String) -> Element {
     let left_panel_state = consume_context::<Signal<MainState>>();
 
     let future = use_resource(|| async move {
-        let response = crate::load_service_overview().await;
+        let env = crate::storage::selected_env::get();
+        let response = crate::load_service_overview(env).await;
         let response = match response {
             Ok(response) => response,
             Err(err) => {
@@ -137,87 +138,6 @@ fn LeftPanelContent(filter: String) -> Element {
     rsx! {
         {elements.into_iter()}
     }
-
-    /*
-    let left_panel = left_panel_state.read();
-
-    let mut elements = Vec::new();
-
-    match left_panel.services.as_ref() {
-        Some(services) => {
-            let max_duration = get_max_duration(services.values());
-            for (_, service) in services.as_ref() {
-                let duration = format!(
-                    "{}/{:?}",
-                    format_amount(service.amount),
-                    service.get_avg_duration()
-                );
-
-                let duration_line = (service.avg as f64 / max_duration) * 100.0;
-
-                let duration_line = rsx! {
-                    div { style: "width:100%",
-                        div { style: "width:{duration_line}%; height: 2px; background-color:blue" }
-                    }
-                };
-
-                if let Some(selected) = left_panel.get_selected() {
-                    if selected.as_str() == service.id.as_str() {
-                        elements.push(rsx! {
-                            button {
-                                r#type: "button",
-                                class: "btn btn-primary btn-sm",
-                                style: "width: 100%; text-align: left;",
-                                "{service.id} "
-                                span { class: "badge text-bg-secondary", {duration} }
-                                {duration_line}
-                            }
-                        });
-                        continue;
-                    }
-                }
-
-                if filter.len() > 0 && !service.id.contains(filter.as_str()) {
-                    continue;
-                }
-
-                let service_id_cloned = Rc::new(service.id.clone());
-
-                elements.push(rsx! {
-                    button {
-                        r#type: "button",
-                        class: "btn btn-light btn-sm",
-                        style: "width: 100%; text-align: left;",
-
-                        Link {
-                            onclick: move |_| {
-                                println!("Clicked on {}", service_id_cloned);
-                                consume_context::<Signal<MainState>>()
-                                    .write()
-                                    .set_selected(service_id_cloned.clone());
-                            },
-                            to: AppRoute::Actions {
-                                service: service.id.clone(),
-                            },
-                            "{service.id} "
-                        }
-                        span { class: "badge text-bg-secondary", {duration} }
-                        {duration_line}
-                    }
-                });
-            }
-        }
-        None => {
-            elements.push(rsx! {
-                h4 { "Loading..." }
-            });
-        }
-    }
-
-    rsx! {
-        {elements.into_iter()}
-    }
-     */
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -262,8 +182,12 @@ fn format_amount(value: i64) -> String {
 }
 
 #[server]
-pub async fn load_service_overview() -> Result<Vec<ServiceOverviewApiModel>, ServerFnError> {
-    let response = crate::api_client::get_list_of_services().await.unwrap();
+pub async fn load_service_overview(
+    env: String,
+) -> Result<Vec<ServiceOverviewApiModel>, ServerFnError> {
+    let response = crate::server::api_client::get_list_of_services(env.as_str())
+        .await
+        .unwrap();
 
     let result = response
         .into_iter()
