@@ -28,7 +28,15 @@ impl Envs {
             for env in envs {
                 if env.as_str() == active_env {
                     self.selected_env = env.clone();
-                    break;
+                    return;
+                }
+            }
+        }
+
+        if self.selected_env.as_str().is_empty() {
+            if let Some(envs) = self.envs.as_ref() {
+                if let Some(env) = envs.first() {
+                    self.selected_env = env.clone();
                 }
             }
         }
