@@ -10,14 +10,14 @@ pub fn RightPanel() -> Element {
     match right_panel_state {
         Some(state) => match state {
             RightPanelState::ShowServiceOverview => ServicesOverview(),
-            RightPanelState::ShowServiceDataOverview(service_id, data) => {
+            RightPanelState::ShowServiceDataOverview(data) => {
                 rsx! {
-                    ServiceDataOverview { service_id: service_id.clone(), data: data.clone() }
+                    ServiceDataOverview { data: data.clone() }
                 }
             }
-            RightPanelState::ShowProcess(service_id, data, process_id) => {
+            RightPanelState::ShowProcess(data, process_id) => {
                 rsx! {
-                    ProcessOverview { service_id, data, process_id }
+                    ProcessOverview { data, process_id }
                 }
             }
         },

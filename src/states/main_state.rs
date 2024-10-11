@@ -34,14 +34,11 @@ impl MainState {
 
     pub fn new_with_selected_action(service_name: String, action: String) -> Self {
         Self {
-            right_panel_state: Some(RightPanelState::ShowServiceDataOverview(
-                Rc::new(service_name),
-                Rc::new(action),
-            )),
+            right_panel_state: Some(RightPanelState::ShowServiceDataOverview(Rc::new(action))),
             dialog: None,
             envs: Envs::new(),
             left_panel: DataState::None,
-            selected_service: None,
+            selected_service: Rc::new(service_name).into(),
         }
     }
 
@@ -51,15 +48,11 @@ impl MainState {
         process_id: i64,
     ) -> Self {
         Self {
-            right_panel_state: Some(RightPanelState::ShowProcess(
-                Rc::new(service_name),
-                Rc::new(action),
-                process_id,
-            )),
+            right_panel_state: Some(RightPanelState::ShowProcess(Rc::new(action), process_id)),
             dialog: None,
             envs: Envs::new(),
             left_panel: DataState::None,
-            selected_service: None,
+            selected_service: Some(Rc::new(service_name)),
         }
     }
 
@@ -74,11 +67,13 @@ impl MainState {
     }
 
     pub fn set_selected_data(&mut self, service_id: Rc<String>, data: Rc<String>) {
-        self.right_panel_state = Some(RightPanelState::ShowServiceDataOverview(service_id, data));
+        self.right_panel_state = Some(RightPanelState::ShowServiceDataOverview(data));
+        self.selected_service = Some(service_id);
     }
 
     pub fn set_show_process(&mut self, service_id: Rc<String>, data: Rc<String>, process_id: i64) {
-        self.right_panel_state = Some(RightPanelState::ShowProcess(service_id, data, process_id));
+        self.right_panel_state = Some(RightPanelState::ShowProcess(data, process_id));
+        self.selected_service = Some(service_id);
     }
 
     pub fn get_right_panel(&self) -> Option<RightPanelState> {

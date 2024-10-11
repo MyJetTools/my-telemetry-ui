@@ -19,7 +19,15 @@ impl ServiceDataOverviewState {
 }
 
 #[component]
-pub fn ServiceDataOverview(service_id: Rc<String>, data: Rc<String>) -> Element {
+pub fn ServiceDataOverview(data: Rc<String>) -> Element {
+    let main_state = consume_context::<Signal<MainState>>();
+    let main_state_read_access = main_state.read();
+
+    let service_id = main_state_read_access
+        .get_selected_service()
+        .clone()
+        .unwrap();
+
     let widget_state = use_signal(|| ServiceDataOverviewState::new());
 
     let widget_state_data = widget_state.read().data.clone();
@@ -77,8 +85,10 @@ pub fn ServiceDataOverview(service_id: Rc<String>, data: Rc<String>) -> Element 
                 });
 
                 let process_id = service_data.process_id;
+
+
                 let service_id_1 = service_id.clone();
-                let service_id_2 = service_id.clone();
+                let service_id_2 = service_id_1.clone();
                 let action_base_64 = to_base_64(data.as_str());
 
                 let data_cloned = data.clone();

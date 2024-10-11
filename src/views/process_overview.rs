@@ -22,7 +22,7 @@ impl ProcessOverviewState {
 }
 
 #[component]
-pub fn ProcessOverview(service_id: Rc<String>, data: Rc<String>, process_id: i64) -> Element {
+pub fn ProcessOverview(data: Rc<String>, process_id: i64) -> Element {
     let mut widget_state = use_signal(|| ProcessOverviewState::new());
 
     let widget_state_read_access = widget_state.read();
