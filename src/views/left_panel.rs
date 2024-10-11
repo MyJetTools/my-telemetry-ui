@@ -126,22 +126,21 @@ fn LeftPanelContent(filter: String) -> Element {
                 class: "btn btn-light btn-sm",
                 style: "width: 100%; text-align: left;",
 
-                table { style: "width:100%",
-                    tr {
-                        td {
-                            Link {
-                                onclick: move |_| {
-                                    let mut write_access = main_state.write();
-                                    write_access.set_selected(service_id_cloned.clone());
-                                },
-                                to: AppRoute::Actions {
-                                    service: service.id.clone(),
-                                },
-                                "{service.id}"
+                Link {
+                    onclick: move |_| {
+                        let mut write_access = main_state.write();
+                        write_access.set_selected(service_id_cloned.clone());
+                    },
+                    to: AppRoute::Actions {
+                        service: service.id.clone(),
+                    },
+
+                    table { style: "width:100%",
+                        tr {
+                            td { {service.id.as_str()} }
+                            td { style: "text-align:right",
+                                span { class: "badge text-bg-secondary", {duration} }
                             }
-                        }
-                        td { style: "text-align:right",
-                            span { class: "badge text-bg-secondary", {duration} }
                         }
                     }
                 }
