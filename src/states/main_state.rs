@@ -24,11 +24,11 @@ impl MainState {
 
     pub fn new_with_selected_service(service_name: String) -> Self {
         Self {
-            right_panel_state: Some(RightPanelState::ShowServiceOverview(Rc::new(service_name))),
+            right_panel_state: Some(RightPanelState::ShowServiceOverview),
             dialog: None,
             envs: Envs::new(),
             left_panel: DataState::None,
-            selected_service: None,
+            selected_service: Some(Rc::new(service_name)),
         }
     }
 
@@ -65,15 +65,12 @@ impl MainState {
 
     pub fn set_selected(&mut self, selected: Rc<String>) {
         println!("Selected: {}", selected);
-        self.right_panel_state = Some(RightPanelState::ShowServiceOverview(selected));
+        self.selected_service = Some(selected.clone());
+        self.right_panel_state = Some(RightPanelState::ShowServiceOverview);
     }
 
-    pub fn get_selected(&self) -> Option<Rc<String>> {
-        match self.right_panel_state.as_ref()? {
-            RightPanelState::ShowServiceOverview(id) => Some(id.clone()),
-            RightPanelState::ShowServiceDataOverview(id, _) => Some(id.clone()),
-            RightPanelState::ShowProcess(id, _, _) => Some(id.clone()),
-        }
+    pub fn get_selected_service(&self) -> Option<Rc<String>> {
+        self.selected_service.clone()
     }
 
     pub fn set_selected_data(&mut self, service_id: Rc<String>, data: Rc<String>) {

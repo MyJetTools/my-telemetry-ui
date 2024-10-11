@@ -23,19 +23,3 @@ impl SettingsModel {
         panic!("Can not get settings for env: '{}'", env);
     }
 }
-/*
-#[async_trait::async_trait]
-impl my_grpc_extensions::GrpcClientSettings for SettingsModel {
-    async fn get_grpc_url(&self, name: &'static str) -> String {
-        if name == TelemetryReaderGrpcClient::get_service_name() {
-            match std::env::var("TELEMETRY_READER_GRPC_URL") {
-                Ok(url) => return url,
-                Err(_) => panic!("TELEMETRY_READER_GRPC_URL is not set"),
-            }
-        }
-
-        panic!("Unknown grpc service name: {}", name)
-    }
-}
-
-*/

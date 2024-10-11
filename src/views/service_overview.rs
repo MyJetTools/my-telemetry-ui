@@ -12,7 +12,7 @@ pub fn ServicesOverview() -> Element {
     let main_state = consume_context::<Signal<MainState>>();
 
     let main_resource = use_resource(use_reactive!(|(main_state,)| async move {
-        let service_id = main_state.read().get_selected().unwrap();
+        let service_id = main_state.read().get_selected_service().unwrap();
         let env = crate::storage::selected_env::get();
         load_services(env, service_id.to_string()).await.unwrap()
     },));
@@ -33,7 +33,7 @@ pub fn ServicesOverview() -> Element {
     let max_duration = get_max(&services);
 
     let services_to_render = services.iter().map(|service| {
-        let service_id = main_state.read().get_selected().unwrap();
+        let service_id = main_state.read().get_selected_service().unwrap();
         let service_id_2 = service_id.clone();
 
         let action_base_64 = crate::utils::to_base_64(service.data.as_str());

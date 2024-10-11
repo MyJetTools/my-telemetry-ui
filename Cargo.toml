@@ -49,7 +49,6 @@ dioxus = { version = "0.5", features = ["fullstack", "router"] }
 serde = "*"
 chrono = "*"
 
-
 dioxus-utils = { tag = "0.1.0", git = "https://github.com/MyJetTools/dioxus-utils.git", features = [
     "fullstack",
 ] }

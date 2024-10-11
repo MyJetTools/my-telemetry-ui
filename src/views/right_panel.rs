@@ -9,7 +9,7 @@ pub fn RightPanel() -> Element {
     let right_panel_state = main_state.read().get_right_panel();
     match right_panel_state {
         Some(state) => match state {
-            RightPanelState::ShowServiceOverview(_) => ServicesOverview(),
+            RightPanelState::ShowServiceOverview => ServicesOverview(),
             RightPanelState::ShowServiceDataOverview(service_id, data) => {
                 rsx! {
                     ServiceDataOverview { service_id: service_id.clone(), data: data.clone() }

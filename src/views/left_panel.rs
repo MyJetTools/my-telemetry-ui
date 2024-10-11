@@ -99,8 +99,14 @@ fn LeftPanelContent(filter: String) -> Element {
                         r#type: "button",
                         class: "btn btn-primary btn-sm",
                         style: "width: 100%; text-align: left;",
-                        "{service.id} "
-                        span { class: "badge text-bg-secondary", {duration} }
+                        table { style: "width:100%",
+                            tr {
+                                td { "{service.id}" }
+                                td { style: "text-align:right",
+                                    span { class: "badge text-bg-secondary", {duration} }
+                                }
+                            }
+                        }
                         {duration_line}
                     }
                 });
@@ -120,17 +126,26 @@ fn LeftPanelContent(filter: String) -> Element {
                 class: "btn btn-light btn-sm",
                 style: "width: 100%; text-align: left;",
 
-                Link {
-                    onclick: move |_| {
-                        let mut write_access = main_state.write();
-                        write_access.set_selected(service_id_cloned.clone());
-                    },
-                    to: AppRoute::Actions {
-                        service: service.id.clone(),
-                    },
-                    "{service.id} "
+                table { style: "width:100%",
+                    tr {
+                        td {
+                            Link {
+                                onclick: move |_| {
+                                    let mut write_access = main_state.write();
+                                    write_access.set_selected(service_id_cloned.clone());
+                                },
+                                to: AppRoute::Actions {
+                                    service: service.id.clone(),
+                                },
+                                "{service.id}"
+                            }
+                        }
+                        td { style: "text-align:right",
+                            span { class: "badge text-bg-secondary", {duration} }
+                        }
+                    }
                 }
-                span { class: "badge text-bg-secondary", {duration} }
+
                 {duration_line}
             }
         });
