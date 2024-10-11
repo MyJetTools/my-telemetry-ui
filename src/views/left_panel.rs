@@ -150,7 +150,7 @@ pub struct ServiceOverviewApiModel {
 
 impl ServiceOverviewApiModel {
     pub fn get_avg_duration(&self) -> Duration {
-        Duration::from_millis(self.avg as u64)
+        Duration::from_micros(self.avg as u64)
     }
 }
 
