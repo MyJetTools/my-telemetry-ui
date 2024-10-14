@@ -89,6 +89,14 @@ fn LeftPanelContent(filter: String) -> Element {
             service.get_avg_duration()
         );
 
+        let badge_type = if service.amount < 10000 {
+            "text-bg-secondary"
+        } else if service.amount < 100000 {
+            "text-bg-warning"
+        } else {
+            "text-bg-danger"
+        };
+
         let duration_line = (service.avg as f64 / max_duration) * 100.0;
 
         let duration_line = rsx! {
@@ -108,7 +116,7 @@ fn LeftPanelContent(filter: String) -> Element {
                             tr {
                                 td { "{service.id}" }
                                 td { style: "text-align:right",
-                                    span { class: "badge text-bg-secondary", {duration} }
+                                    span { class: "badge {badge_type}", {duration} }
                                 }
                             }
                         }
@@ -142,7 +150,7 @@ fn LeftPanelContent(filter: String) -> Element {
                     tr {
                         td { {service.id.as_str()} }
                         td { style: "text-align:right",
-                            span { class: "badge text-bg-secondary", {duration} }
+                            span { class: "badge {badge_type}", {duration} }
                         }
                     }
                 }
