@@ -73,7 +73,7 @@ body {
 
 #left-panel-content {
     width: 100%;
-    height: calc(var(--total-height) - var(--search-input-height));
+    height: calc(var(--total-height) - 91px);
     overflow-y: auto;
 }
 

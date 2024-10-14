@@ -27,7 +27,8 @@ pub fn SelectHourKey() -> Element {
 
     rsx! {
         select {
-            class: "form-select",
+            class: "form-select-sm",
+            style: "width:100%;border-color: lightgray;",
             oninput: move |e| {
                 let value = e.value().parse::<i64>().unwrap_or_default();
                 main_state.write().set_hours_ago(value);

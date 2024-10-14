@@ -11,17 +11,20 @@ pub fn LeftPanel() -> Element {
     let mut filter = use_signal(|| "".to_string());
 
     rsx! {
-        EnvsSelector {}
-        SelectHourKey {}
-        input {
-            id: "search-input",
-            class: "form-control",
-            placeholder: "Search",
-            oninput: move |cx| {
-                let new_value = cx.value().trim().to_string();
-                filter.set(new_value);
+        div {
+            EnvsSelector {}
+            SelectHourKey {}
+            input {
+                id: "search-input",
+                class: "form-control",
+                placeholder: "Search",
+                oninput: move |cx| {
+                    let new_value = cx.value().trim().to_string();
+                    filter.set(new_value);
+                }
             }
         }
+
         div { id: "left-panel-content",
             LeftPanelContent { filter: filter.read().clone() }
         }

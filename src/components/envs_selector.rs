@@ -22,8 +22,8 @@ pub fn EnvsSelector() -> Element {
 
     rsx! {
         select {
-            class: "form-select",
-            style: "background-color: white;",
+            class: "form-select-sm",
+            style: "background-color: white; width:100%;border-color: lightgray;",
 
             value: main_state_read_access.envs.get_selected().as_str(),
 
