@@ -136,16 +136,6 @@ pub fn ServicesOverview() -> Element {
     rsx! {
         {result.into_iter()}
     }
-
-    /*
-        if !widget_state.read().service_id_in_refresh{
-            if widget_state.read().has_to_be_refreshed(service_id.as_str()) {
-                let service_id = widget_state.read().service_id.clone();
-                widget_state.set(ServicesOverviewState::new_as_service_id_in_refresh(service_id));
-                future.restart();
-            }
-        }
-    */
 }
 
 fn get_max(services: &[ServiceApiModel]) -> f64 {
