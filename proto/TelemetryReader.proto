@@ -13,6 +13,7 @@ message ServiceGrpcModel {
 
 message GetByAppRequest{
     string AppId = 1;
+    int64 HourKey = 2;
 }
 
 message TagGrpcModel{
@@ -34,6 +35,7 @@ message AppActionGrpcModel {
 message GetAppEventsByActionRequest{
     string AppId = 1;
     string Data = 2;
+    int64 HourKey = 3;
 }
 
 message AppDataGrpcModel {
@@ -47,6 +49,7 @@ message AppDataGrpcModel {
 
 message GetByProcessIdRequest{
     int64 ProcessId = 1;
+    int64 HourKey = 2;
 }
 
 message MetricEventGrpcModel{
@@ -59,8 +62,19 @@ message MetricEventGrpcModel{
     repeated TagGrpcModel Tags  = 7;
 }
 
+message GetAppsRequest{
+    int64 HourKey = 1;
+}
+
+
+message AvailableFileGrpcModel{
+    int64 HourAgo = 1;
+    uint64 FileSize = 2;
+}
 service TelemetryReader {
-    rpc GetApps(google.protobuf.Empty) returns (stream ServiceGrpcModel);
+
+    rpc GetAvailableHoursAgo(google.protobuf.Empty) returns (stream AvailableFileGrpcModel);
+    rpc GetApps(GetAppsRequest) returns (stream ServiceGrpcModel);
     rpc GetAppActions(GetByAppRequest) returns (stream AppActionGrpcModel);
     rpc GetAppEventsByAction(GetAppEventsByActionRequest) returns (stream AppDataGrpcModel);
     rpc GetByProcessId(GetByProcessIdRequest) returns (stream MetricEventGrpcModel);

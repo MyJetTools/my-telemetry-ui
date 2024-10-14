@@ -23,6 +23,8 @@ pub fn ServiceDataOverview(data: Rc<String>) -> Element {
     let main_state = consume_context::<Signal<MainState>>();
     let main_state_read_access = main_state.read();
 
+    let hours_ago = main_state_read_access.get_hours_ago();
+
     let service_id = main_state_read_access
         .get_selected_service()
         .clone()
@@ -150,7 +152,7 @@ pub fn ServiceDataOverview(data: Rc<String>) -> Element {
             let mut widget_state = widget_state.to_owned();
             spawn(async move {
                 let env = crate::storage::selected_env::get();
-                let data = load_services_data(env, service_id, service_data)
+                let data = load_services_data(env, hours_ago, service_id, service_data)
                     .await
                     .unwrap();
                 widget_state.write().data = Some(Rc::new(data));
@@ -203,13 +205,18 @@ pub struct TagApiModel {
 #[server]
 async fn load_services_data(
     env: String,
+    hours_ago: i64,
     service_id: String,
     service_data: String,
 ) -> Result<Vec<ServiceDataApiModel>, ServerFnError> {
-    let mut response =
-        crate::server::api_client::get_by_service_data(env.as_str(), service_id, service_data)
-            .await
-            .unwrap();
+    let mut response = crate::server::api_client::get_by_service_data(
+        env.as_str(),
+        hours_ago,
+        service_id,
+        service_data,
+    )
+    .await
+    .unwrap();
 
     response.sort_by(|i1, i2| {
         if i1.started < i2.started {

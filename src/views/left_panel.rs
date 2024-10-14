@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 
 use crate::{states::MainState, AppRoute, DataState};
 
-use super::*;
+use crate::components::*;
 
 #[component]
 pub fn LeftPanel() -> Element {
@@ -12,6 +12,7 @@ pub fn LeftPanel() -> Element {
 
     rsx! {
         EnvsSelector {}
+        SelectHourKey {}
         input {
             id: "search-input",
             class: "form-control",
@@ -33,13 +34,17 @@ fn LeftPanelContent(filter: String) -> Element {
 
     let main_state_read_model = main_state.read();
 
+    let hours_ago = main_state_read_model.get_hours_ago();
+
     let services = match main_state_read_model.left_panel.as_ref() {
         DataState::None => {
             spawn(async move {
-                main_state.write().left_panel = DataState::Loading;
+                {
+                    main_state.write().left_panel = DataState::Loading;
+                }
 
                 let env = crate::storage::selected_env::get();
-                let response = crate::load_service_overview(env).await;
+                let response = crate::load_service_overview(env, hours_ago).await;
                 let response = match response {
                     Ok(response) => response,
                     Err(err) => {
@@ -199,8 +204,9 @@ fn format_amount(value: i64) -> String {
 #[server]
 pub async fn load_service_overview(
     env: String,
+    hours_ago: i64,
 ) -> Result<Vec<ServiceOverviewApiModel>, ServerFnError> {
-    let response = crate::server::api_client::get_list_of_services(env.as_str())
+    let response = crate::server::api_client::get_list_of_services(env.as_str(), hours_ago)
         .await
         .unwrap();
 

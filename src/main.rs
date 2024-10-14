@@ -2,6 +2,8 @@ use dioxus::prelude::*;
 
 //mod http_server;
 
+mod components;
+mod models;
 mod states;
 mod storage;
 mod utils;
@@ -117,7 +119,7 @@ pub fn MyLayout() -> Element {
     let mut main_state = consume_context::<Signal<MainState>>();
     let main_state_read_access = main_state.read();
 
-    if main_state_read_access.envs.initialized() {
+    if main_state_read_access.envs.initialized() && main_state_read_access.files.initialized() {
         return rsx! {
             div { id: "layout",
                 div { id: "left-panel", LeftPanel {} }
@@ -135,16 +137,43 @@ pub fn MyLayout() -> Element {
             spawn(async move {
                 loading_envs_state.set(DataState::Loading);
 
-                let envs = get_envs().await;
-                match envs {
-                    Ok(envs) => {
-                        main_state.write().envs.set_envs(envs);
-                        loading_envs_state.set(DataState::Loaded(()));
-                    }
-                    Err(err) => {
-                        loading_envs_state.set(DataState::Error(err.to_string()));
+                let (envs_initialized, files_initialized) = {
+                    let read_access = main_state.read();
+                    (
+                        read_access.envs.initialized(),
+                        read_access.files.initialized(),
+                    )
+                };
+
+                if !envs_initialized {
+                    let envs = get_envs().await;
+                    match envs {
+                        Ok(envs) => {
+                            main_state.write().envs.set_envs(envs);
+                        }
+                        Err(err) => {
+                            loading_envs_state.set(DataState::Error(err.to_string()));
+                            return;
+                        }
                     }
                 }
+
+                if !files_initialized {
+                    let selected_env = { main_state.read().envs.get_selected().to_string() };
+
+                    let envs = get_available_files_to_read(selected_env).await;
+                    match envs {
+                        Ok(envs) => {
+                            main_state.write().files.set_files(envs);
+                        }
+                        Err(err) => {
+                            loading_envs_state.set(DataState::Error(err.to_string()));
+                            return;
+                        }
+                    }
+                }
+
+                loading_envs_state.set(DataState::Loaded(()));
             });
             return render_loading_environments();
         }
@@ -172,6 +201,29 @@ pub async fn get_envs() -> Result<Vec<String>, ServerFnError> {
         .get_settings()
         .await
         .get_envs();
+
+    Ok(result)
+}
+
+#[server]
+pub async fn get_available_files_to_read(
+    env: String,
+) -> Result<Vec<crate::models::MetricFileHttpModel>, ServerFnError> {
+    let grpc_client = crate::server::APP_CTX.get_grpc_client(env.as_str()).await;
+
+    let items = grpc_client
+        .get_available_hours_ago(())
+        .await
+        .unwrap()
+        .unwrap_or_default();
+
+    let result = items
+        .into_iter()
+        .map(|itm| crate::models::MetricFileHttpModel {
+            hours_ago: itm.hour_ago,
+            file_size: itm.file_size,
+        })
+        .collect();
 
     Ok(result)
 }

@@ -12,9 +12,18 @@ pub fn ServicesOverview() -> Element {
     let main_state = consume_context::<Signal<MainState>>();
 
     let main_resource = use_resource(use_reactive!(|(main_state,)| async move {
-        let service_id = main_state.read().get_selected_service().unwrap();
-        let env = crate::storage::selected_env::get();
-        load_services(env, service_id.to_string()).await.unwrap()
+        let (env, hours_ago, service_id) = {
+            let main_state_read_access = main_state.read();
+            let service_id = main_state_read_access.get_selected_service().unwrap();
+            let env = crate::storage::selected_env::get();
+            let hours_ago = main_state_read_access.get_hours_ago();
+
+            (env, hours_ago, service_id)
+        };
+
+        load_services(env, hours_ago, service_id.to_string())
+            .await
+            .unwrap()
     },));
 
     let widget_data = main_resource.read_unchecked();
@@ -30,7 +39,7 @@ pub fn ServicesOverview() -> Element {
 
     let mut result = Vec::new();
 
-    let max_duration = get_max(&services);
+    let max_duration = get_max(services);
 
     let services_to_render = services.iter().map(|service| {
         let service_id = main_state.read().get_selected_service().unwrap();
@@ -179,14 +188,17 @@ impl ServiceApiModel {
 #[server]
 async fn load_services(
     env: String,
+    hours_ago: i64,
     service_id: String,
 ) -> Result<Vec<ServiceApiModel>, ServerFnError> {
-    let response =
-        crate::server::api_client::get_services_overview(env.as_str(), service_id.clone())
-            .await
-            .unwrap();
+    let apps = crate::server::api_client::get_services_overview(
+        env.as_str(),
+        hours_ago,
+        service_id.clone(),
+    )
+    .await;
 
-    let result: Vec<ServiceApiModel> = response
+    let services: Vec<ServiceApiModel> = apps
         .into_iter()
         .map(|src| ServiceApiModel {
             data: src.data,
@@ -199,5 +211,5 @@ async fn load_services(
         })
         .collect();
 
-    Ok(result)
+    Ok(services)
 }

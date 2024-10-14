@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, rc::Rc};
 
 use crate::ServiceOverviewApiModel;
 
-use super::{DataState, DialogState, Envs, RightPanelState};
+use super::{AvailableFiles, DataState, DialogState, Envs, RightPanelState};
 
 pub struct MainState {
     pub envs: Envs,
@@ -10,6 +10,7 @@ pub struct MainState {
     pub selected_service: Option<Rc<String>>,
     pub right_panel_state: Option<RightPanelState>,
     pub dialog: Option<DialogState>,
+    pub files: AvailableFiles,
 }
 impl MainState {
     pub fn new() -> Self {
@@ -19,6 +20,7 @@ impl MainState {
             envs: Envs::new(),
             left_panel: DataState::None,
             selected_service: None,
+            files: AvailableFiles::new(),
         }
     }
 
@@ -29,6 +31,7 @@ impl MainState {
             envs: Envs::new(),
             left_panel: DataState::None,
             selected_service: Some(Rc::new(service_name)),
+            files: AvailableFiles::new(),
         }
     }
 
@@ -39,6 +42,7 @@ impl MainState {
             envs: Envs::new(),
             left_panel: DataState::None,
             selected_service: Rc::new(service_name).into(),
+            files: AvailableFiles::new(),
         }
     }
 
@@ -53,6 +57,7 @@ impl MainState {
             envs: Envs::new(),
             left_panel: DataState::None,
             selected_service: Some(Rc::new(service_name)),
+            files: AvailableFiles::new(),
         }
     }
 
@@ -97,5 +102,28 @@ impl MainState {
         self.right_panel_state = None;
         self.dialog = None;
         self.selected_service = None;
+        self.files.reset();
+    }
+
+    pub fn set_hours_ago(&mut self, hours_ago: i64) {
+        crate::storage::hours_ago::set(hours_ago);
+        self.right_panel_state = None;
+        self.dialog = None;
+        self.selected_service = None;
+        self.left_panel = DataState::None;
+    }
+
+    pub fn try_get_hours_ago(&self) -> Option<i64> {
+        let result = crate::storage::hours_ago::get();
+
+        self.files.get_available_hours_ago(result)
+    }
+
+    pub fn get_hours_ago(&self) -> i64 {
+        let result = crate::storage::hours_ago::get();
+
+        self.files
+            .get_available_hours_ago(result)
+            .unwrap_or_default()
     }
 }

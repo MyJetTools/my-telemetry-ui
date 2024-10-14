@@ -1,20 +1,19 @@
-use crate::server::reader_grpc::{AppActionGrpcModel, GetByAppRequest};
+use crate::server::reader_grpc::*;
 
 pub async fn get_services_overview(
     env: &str,
+    hours_ago: i64,
     service_id: String,
-) -> Result<Vec<AppActionGrpcModel>, String> {
-    let response = crate::server::APP_CTX
-        .get_grpc_client(env)
+) -> Vec<AppActionGrpcModel> {
+    let grpc_client = crate::server::APP_CTX.get_grpc_client(env).await;
+    let apps = grpc_client
+        .get_app_actions(GetByAppRequest {
+            app_id: service_id,
+            hour_key: super::calc_hour_key(hours_ago),
+        })
         .await
-        .get_app_actions(GetByAppRequest { app_id: service_id })
-        .await;
+        .unwrap()
+        .unwrap_or_default();
 
-    match response {
-        Ok(response) => match response {
-            Some(response) => Ok(response),
-            None => Ok(vec![]),
-        },
-        Err(err) => Err(format!("{:?}", err)),
-    }
+    apps
 }

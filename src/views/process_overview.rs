@@ -33,7 +33,11 @@ pub fn ProcessOverview(data: Rc<String>, process_id: i64) -> Element {
                 widget_state.write().data = DataState::Loading;
 
                 let env = crate::storage::selected_env::get();
-                let response = load_metric_events(env, process_id).await;
+
+                let hours_ago = consume_context::<Signal<MainState>>()
+                    .read()
+                    .get_hours_ago();
+                let response = load_metric_events(env, hours_ago, process_id).await;
 
                 match response {
                     Ok(response) => {
@@ -275,11 +279,13 @@ impl MetricEventApiModel {
 #[server]
 async fn load_metric_events(
     env: String,
+    hours_ago: i64,
     process_id: i64,
 ) -> Result<Vec<MetricEventApiModel>, ServerFnError> {
-    let mut response = crate::server::api_client::get_by_process_id(env.as_str(), process_id)
-        .await
-        .unwrap();
+    let mut response =
+        crate::server::api_client::get_by_process_id(env.as_str(), hours_ago, process_id)
+            .await
+            .unwrap();
 
     response.sort_by(|i1, i2| {
         if i1.started > i2.started {
