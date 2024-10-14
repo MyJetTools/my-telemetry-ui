@@ -89,9 +89,11 @@ fn LeftPanelContent(filter: String) -> Element {
             service.get_avg_duration()
         );
 
-        let badge_type = if service.amount < 10000 {
-            "text-bg-secondary"
+        let badge_type = if service.amount < 50000 {
+            "text-bg-light"
         } else if service.amount < 100000 {
+            "text-bg-info"
+        } else if service.amount < 500000 {
             "text-bg-warning"
         } else {
             "text-bg-danger"
