@@ -35,6 +35,8 @@ body {
 
     --search-input-height: 30px;
 
+    --top-panel-height: 50px;
+
 
 }
 
@@ -61,9 +63,24 @@ body {
     position: absolute;
     left: var(--left-panel-width);
     top: 0;
+    padding-top: var(--top-panel-height);
     height: var(--total-height);
     width: calc(var(--total-width) - var(--left-panel-width));
     overflow-y: auto;
+}
+
+#top-panel {
+    position: absolute;
+    left: var(--left-panel-width);
+    top: 0;
+    border-radius: 5px;
+    box-shadow: 0 0 5px lightgray;
+    margin-left: 10px;
+    margin-top: 5px;
+    padding: 5px;
+    border: 1px solid lightgray;
+    background: #ffffffba;
+    backdrop-filter: blur(3px);
 }
 
 
@@ -116,4 +133,11 @@ body {
 
 .modal-header {
     padding: 10px;
+}
+
+
+.table_top_label {
+    text-align: right;
+    margin-top: -30px;
+    margin-right: 10px;
 }

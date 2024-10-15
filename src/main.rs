@@ -123,7 +123,9 @@ pub fn MyLayout() -> Element {
         return rsx! {
             div { id: "layout",
                 div { id: "left-panel", LeftPanel {} }
+
                 div { id: "right-panel", RightPanel {} }
+                div { id: "top-panel", RenderTopPanel {} }
                 dialog::RenderDialog {}
             }
         };

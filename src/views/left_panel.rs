@@ -13,7 +13,6 @@ pub fn LeftPanel() -> Element {
     rsx! {
         div {
             EnvsSelector {}
-            SelectHourKey {}
             input {
                 id: "search-input",
                 class: "form-control",

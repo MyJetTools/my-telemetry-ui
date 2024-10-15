@@ -36,6 +36,8 @@ message GetAppEventsByActionRequest{
     string AppId = 1;
     string Data = 2;
     int64 HourKey = 3;
+    string ClientId = 4;
+    int64 FromSecWithinHour = 5;
 }
 
 message AppDataGrpcModel {

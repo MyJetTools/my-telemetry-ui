@@ -9,3 +9,5 @@ pub use service_data_overview::*;
 mod process_overview;
 pub use process_overview::*;
 pub mod dialog;
+mod top_panel;
+pub use top_panel::*;

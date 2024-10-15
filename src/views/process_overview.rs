@@ -3,11 +3,10 @@ use std::{rc::Rc, time::Duration};
 use dioxus::prelude::*;
 
 use crate::{
+    models::*,
     states::{DialogState, MainState},
     DataState,
 };
-
-use super::TagApiModel;
 
 struct ProcessOverviewState {
     data: DataState<Vec<Rc<MetricEventApiModel>>>,
@@ -214,7 +213,7 @@ pub fn ProcessOverview(data: Rc<String>, process_id: i64) -> Element {
     };
 
     rsx! {
-        div { style: "text-align: left;",
+        div { class: "table_top_label",
             b { "{process_id}" }
             hr {}
         }
@@ -253,27 +252,6 @@ fn get_min_max(items: &[Rc<MetricEventApiModel>]) -> MinMax {
     result.max_duration = result.finished - result.start;
 
     result
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct MetricEventApiModel {
-    pub started: i64,
-    pub duration: i64,
-    pub name: String,
-    pub data: String,
-    pub tags: Vec<TagApiModel>,
-    pub success: Option<String>,
-    pub fail: Option<String>,
-}
-
-impl MetricEventApiModel {
-    pub fn get_started(&self) -> String {
-        crate::utils::unix_microseconds_to_string(self.started)
-    }
-
-    pub fn get_duration(&self) -> Duration {
-        Duration::from_micros(self.duration as u64)
-    }
 }
 
 #[server]

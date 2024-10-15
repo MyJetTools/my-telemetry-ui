@@ -1,5 +1,6 @@
 use std::{collections::BTreeMap, rc::Rc};
 
+use crate::models::*;
 use crate::ServiceOverviewApiModel;
 
 use super::{AvailableFiles, DataState, DialogState, Envs, RightPanelState};
@@ -9,8 +10,11 @@ pub struct MainState {
     pub left_panel: DataState<Rc<BTreeMap<Rc<String>, ServiceOverviewApiModel>>>,
     pub selected_service: Option<Rc<String>>,
     pub right_panel_state: Option<RightPanelState>,
+    pub server_data_overview: DataState<Rc<Vec<ServiceDataApiModel>>>,
     pub dialog: Option<DialogState>,
     pub files: AvailableFiles,
+    pub client_id: String,
+    pub from_time: TimeModel,
 }
 impl MainState {
     pub fn new() -> Self {
@@ -19,8 +23,11 @@ impl MainState {
             dialog: None,
             envs: Envs::new(),
             left_panel: DataState::None,
+            server_data_overview: DataState::None,
             selected_service: None,
             files: AvailableFiles::new(),
+            client_id: crate::storage::client_id::get(),
+            from_time: crate::storage::from_time::get(),
         }
     }
 
@@ -32,6 +39,9 @@ impl MainState {
             left_panel: DataState::None,
             selected_service: Some(Rc::new(service_name)),
             files: AvailableFiles::new(),
+            client_id: crate::storage::client_id::get(),
+            server_data_overview: DataState::None,
+            from_time: crate::storage::from_time::get(),
         }
     }
 
@@ -43,6 +53,9 @@ impl MainState {
             left_panel: DataState::None,
             selected_service: Rc::new(service_name).into(),
             files: AvailableFiles::new(),
+            client_id: crate::storage::client_id::get(),
+            server_data_overview: DataState::None,
+            from_time: crate::storage::from_time::get(),
         }
     }
 
@@ -58,6 +71,9 @@ impl MainState {
             left_panel: DataState::None,
             selected_service: Some(Rc::new(service_name)),
             files: AvailableFiles::new(),
+            client_id: crate::storage::client_id::get(),
+            server_data_overview: DataState::None,
+            from_time: crate::storage::from_time::get(),
         }
     }
 
@@ -125,5 +141,19 @@ impl MainState {
         self.files
             .get_available_hours_ago(result)
             .unwrap_or_default()
+    }
+
+    pub fn apply_client_id(&mut self) {
+        crate::storage::client_id::set(&self.client_id);
+        crate::storage::from_time::set(&self.from_time);
+        self.server_data_overview = DataState::None;
+    }
+
+    pub fn reset_client_id(&mut self) {
+        self.client_id = "".to_string();
+        self.from_time = TimeModel::default();
+        crate::storage::client_id::set(&self.client_id);
+        crate::storage::from_time::set(&self.from_time);
+        self.server_data_overview = DataState::None;
     }
 }
