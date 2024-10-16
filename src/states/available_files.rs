@@ -33,6 +33,6 @@ impl AvailableFiles {
             }
         }
 
-        Some(files[0].hours_ago)
+        Some(files.get(0)?.hours_ago)
     }
 }
