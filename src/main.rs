@@ -126,6 +126,7 @@ pub fn MyLayout() -> Element {
 
                 div { id: "right-panel", RightPanel {} }
                 div { id: "top-panel", RenderTopPanel {} }
+                div { id: "bottom-panel", RenderBottomPanel {} }
                 dialog::RenderDialog {}
             }
         };

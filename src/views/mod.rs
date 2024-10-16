@@ -11,3 +11,5 @@ pub use process_overview::*;
 pub mod dialog;
 mod top_panel;
 pub use top_panel::*;
+mod bottom_panel;
+pub use bottom_panel::*;

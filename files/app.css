@@ -37,6 +37,8 @@ body {
 
     --top-panel-height: 50px;
 
+    --bottom-panel-height: 25px;
+
 
 }
 
@@ -83,6 +85,19 @@ body {
     backdrop-filter: blur(3px);
 }
 
+#bottom-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: var(--total-width);
+    height: var(--bottom-panel-height);
+    background-color: #f9f6f6;
+    border-top: white;
+    border-left: white;
+    border-bottom: gray;
+    border-right: gray;
+    box-shadow: 0 0 5px lightgray;
+}
 
 #search-input {
     height: var(--search-input-height);
@@ -140,4 +155,13 @@ body {
     text-align: right;
     margin-top: -30px;
     margin-right: 10px;
+}
+
+.separator {
+    height: 17px;
+    width: 1px;
+    background: lightgray;
+    margin-left: 5px;
+    margin-right: 5px;
+
 }
