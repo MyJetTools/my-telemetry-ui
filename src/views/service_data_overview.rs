@@ -67,7 +67,11 @@ pub fn ServiceDataOverview(data: Rc<String>) -> Element {
     };
     let max_duration = get_max(service_data);
     let items = service_data.iter().map(|service_data| {
-        let started = &service_data.get_started()[..26];
+        let started = service_data.get_started().to_rfc3339();
+        let started = &started[..26];
+        
+        
+
         let duration = format!("{:?}", service_data.get_duration());
 
         let bar_duration = (service_data.duration as f64 / max_duration) * 100.0;

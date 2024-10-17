@@ -86,6 +86,28 @@ message TechMetricsGrpcModel{
     uint64 AppDataCapacity = 9;
 }
 
+message AddPermanentUserGrpcRequest{
+    string UserId = 1;
+}
+
+message DeletePermanentUserGrpcRequest{
+    string UserId = 1;
+}
+
+
+enum PermanentUserStatusGrpcModel{
+    InProcess = 0;
+    Added = 1;
+    Deleting = 2;
+}
+
+message PermanentUserGrpcModel{
+    string UserId = 1;
+    int64 Added = 2;
+    PermanentUserStatusGrpcModel Status = 3;
+}
+
+
 service TelemetryReader {
 
     rpc GetAvailableHoursAgo(google.protobuf.Empty) returns (stream AvailableFileGrpcModel);
@@ -95,6 +117,13 @@ service TelemetryReader {
     rpc GetByProcessId(GetByProcessIdRequest) returns (stream MetricEventGrpcModel);
 
     rpc GetTechMetrics(google.protobuf.Empty) returns (TechMetricsGrpcModel);
+
+
+    rpc AddPermanentUser(AddPermanentUserGrpcRequest) returns (google.protobuf.Empty);
+    rpc DeletePermanentUser(DeletePermanentUserGrpcRequest) returns (google.protobuf.Empty);
+    rpc GetPermanentUsers(google.protobuf.Empty) returns (stream PermanentUserGrpcModel);
+
+
     rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
 
  }

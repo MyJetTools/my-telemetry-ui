@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use rust_extensions::date_time::DateTimeAsMicroseconds;
+
 use crate::models::*;
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct MetricEventApiModel {
@@ -13,8 +15,8 @@ pub struct MetricEventApiModel {
 }
 
 impl MetricEventApiModel {
-    pub fn get_started(&self) -> String {
-        crate::utils::unix_microseconds_to_string(self.started)
+    pub fn get_started(&self) -> DateTimeAsMicroseconds {
+        DateTimeAsMicroseconds::new(self.started)
     }
 
     pub fn get_duration(&self) -> Duration {

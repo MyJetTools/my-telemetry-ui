@@ -77,7 +77,8 @@ pub fn ProcessOverview(data: Rc<String>, process_id: i64) -> Element {
         let min_max = get_min_max(&items);
 
         for item in items {
-            let started = item.get_started();
+            let started = item.get_started().to_rfc3339();
+            let started = &started[..26];
 
             let bg_color = if &item.data == data.as_str() {
                 "lightgray"
@@ -199,7 +200,9 @@ pub fn ProcessOverview(data: Rc<String>, process_id: i64) -> Element {
         }
 
         rsx! {
-            table { class: "table", style: "text-align: left;",
+            table {
+                class: "table",
+                style: "text-align: left;margin-bottom: 50px;",
                 tr {
                     td { "Started" }
                     td { "Name" }
@@ -296,30 +299,4 @@ async fn load_metric_events(
         .collect();
 
     Ok(result)
-
-    /*
-    let state = state.to_owned();
-
-    let process_id = cx.props.process_id;
-
-    cx.spawn(async move {
-        let mut response = crate::api_client::get_by_process_id(process_id)
-            .await
-            .unwrap();
-
-        response.sort_by(|i1, i2| {
-            if i1.started > i2.started {
-                Ordering::Greater
-            } else if i1.started < i2.started {
-                Ordering::Less
-            } else {
-                Ordering::Equal
-            }
-        });
-
-        state.set(ProcessOverviewState {
-            data: Some(response),
-        });
-    });
-     */
 }
