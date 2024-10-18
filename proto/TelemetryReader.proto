@@ -84,6 +84,7 @@ message TechMetricsGrpcModel{
     uint64 UserIdLinksSize = 7;
     uint64 AppDataSize = 8;
     uint64 AppDataCapacity = 9;
+    uint64 UserIdLinksCapacity = 10;
 }
 
 message AddPermanentUserGrpcRequest{

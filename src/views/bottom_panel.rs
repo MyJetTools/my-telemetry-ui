@@ -83,7 +83,11 @@ pub fn RenderBottomPanel() -> Element {
                 }
 
                 td { "UserId links size:" }
-                td { {data.user_id_links_size.to_string()} }
+                td {
+                    {data.user_id_links_size.to_string()},
+                    "/"
+                    {data.user_id_links_capacity.to_string()}
+                }
             }
         }
     }
@@ -98,6 +102,7 @@ pub struct BottomPanelHttpModel {
     pub queue_by_process_size: u64,
     pub queue_by_process_capacity: u64,
     pub user_id_links_size: u64,
+    pub user_id_links_capacity: u64,
 
     pub app_data_size: u64,
     pub app_data_capacity: u64,
@@ -118,6 +123,7 @@ pub async fn load_tech_info(env: String) -> Result<BottomPanelHttpModel, ServerF
         queue_by_process_size: response.queue_by_process_size,
         queue_by_process_capacity: response.queue_by_process_capacity,
         user_id_links_size: response.user_id_links_size,
+        user_id_links_capacity: response.user_id_links_capacity,
 
         app_data_size: response.app_data_size,
         app_data_capacity: response.app_data_capacity,
