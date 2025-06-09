@@ -1,23 +1,23 @@
 use std::collections::{BTreeMap, HashMap};
 
+use my_ssh::ssh_settings::*;
 use serde::*;
 
-use my_ssh::SshCredentialsSettingsModel;
+use super::app_ctx::GrpcLogSettings;
 
 #[derive(Serialize, Deserialize)]
 pub struct SettingsModel {
     pub envs: BTreeMap<String, String>,
-    pub ssh_credentials: Option<HashMap<String, SshCredentialsSettingsModel>>,
+    pub ssh_credentials: Option<HashMap<String, SshPrivateKeySettingsModel>>,
 }
 
 impl SettingsModel {
     pub fn get_envs(&self) -> Vec<String> {
         self.envs.keys().cloned().collect()
     }
-    pub async fn get_env_url(&self, env: &str) -> my_ssh::OverSshConnectionSettings {
+    pub fn get_grpc_url(&self, env: &str) -> GrpcLogSettings {
         if let Some(result) = self.envs.get(env) {
-            return my_ssh::OverSshConnectionSettings::parse(result, self.ssh_credentials.as_ref())
-                .await;
+            return GrpcLogSettings::new(result.to_string());
         }
 
         panic!("Can not get settings for env: '{}'", env);

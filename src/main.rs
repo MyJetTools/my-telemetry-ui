@@ -49,16 +49,17 @@ fn NotFound(segments: Vec<String>) -> Element {
 }
 
 fn main() {
-    let cfg = dioxus::fullstack::Config::new();
-
-    #[cfg(feature = "server")]
-    let cfg = cfg.addr(([0, 0, 0, 0], 9001));
-
-    LaunchBuilder::fullstack().with_cfg(cfg).launch(|| {
-        rsx! {
-            Router::<AppRoute> {}
-        }
-    })
+    dioxus::LaunchBuilder::new()
+        .with_cfg(server_only!(ServeConfig::builder().incremental(
+            IncrementalRendererConfig::default()
+                .invalidate_after(std::time::Duration::from_secs(120)),
+        )))
+        .launch(|| {
+            rsx! {
+                document::Link { rel: "icon", href: asset!("/assets/favicon.ico") }
+                Router::<AppRoute> {}
+            }
+        })
 }
 
 #[component]
